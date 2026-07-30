@@ -16,6 +16,7 @@ restarted.
 - `GET /api/health` — service and payment-network status
 - `GET /api/example` — free representative response
 - `GET /openapi.json` — OpenAPI 3.1 description
+- `GET /llms.txt` — compact agent-facing instructions
 - `POST /api/audit` — paid launch audit
 
 The paid route accepts:

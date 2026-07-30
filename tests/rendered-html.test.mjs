@@ -36,15 +36,17 @@ test("server-renders the ProofDesk landing page", async () => {
 });
 
 test("serves health, example and OpenAPI responses", async () => {
-  const [healthResponse, exampleResponse, openapiResponse] = await Promise.all([
+  const [healthResponse, exampleResponse, openapiResponse, llmsResponse] = await Promise.all([
     request("/api/health"),
     request("/api/example"),
     request("/openapi.json"),
+    request("/llms.txt"),
   ]);
 
   assert.equal(healthResponse.status, 200);
   assert.equal(exampleResponse.status, 200);
   assert.equal(openapiResponse.status, 200);
+  assert.equal(llmsResponse.status, 200);
 
   const [health, example, openapi] = await Promise.all([
     healthResponse.json(),
@@ -58,6 +60,7 @@ test("serves health, example and OpenAPI responses", async () => {
   assert.ok(Array.isArray(example.checks));
   assert.equal(openapi.openapi, "3.1.0");
   assert.ok(openapi.paths["/api/audit"].post);
+  assert.match(await llmsResponse.text(), /ProofDesk Launch Audit API/);
 });
 
 test("returns valid x402 requirements for both payment networks", async () => {
