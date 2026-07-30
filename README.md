@@ -59,6 +59,23 @@ try {
 The wallet must hold at least `$0.10` of native USDC on Base. Never paste the
 key into the script, issue tracker, command line, or repository.
 
+## Protocol validation
+
+On 2026-07-30, Coinbase's unauthenticated, read-only
+[x402 endpoint validator](https://docs.cdp.coinbase.com/x402/validate-endpoint)
+returned `valid: true` for the live `POST /api/audit` route: HTTP 402, x402 v2,
+the payment-required header, and the Bazaar input/output metadata all passed,
+with simulation outcome `accepted`. This proves discovery readiness; it does
+not claim that the temporary tunnel URL is indexed in CDP Bazaar.
+
+You can repeat the no-payment check with:
+
+```bash
+curl -X POST https://api.cdp.coinbase.com/platform/v2/x402/validate \
+  -H "content-type: application/json" \
+  -d '{"resource":"https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit","method":"POST"}'
+```
+
 ## Assisted audit — $10
 
 For buyers who want a prioritized action plan instead of raw JSON, the
