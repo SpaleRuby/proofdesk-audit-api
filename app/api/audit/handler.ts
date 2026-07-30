@@ -1,36 +1,31 @@
 import { isAuditInputError, runAudit } from "@/lib/audit";
+import { readUrlRequest } from "@/lib/url-request";
 import { NextRequest, NextResponse } from "next/server";
+
+const responseHeaders = {
+  "cache-control": "no-store",
+  "access-control-allow-origin": "*",
+};
 
 export async function auditHandler(request: NextRequest): Promise<NextResponse> {
   try {
-    const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
-    if (!contentType.includes("application/json")) {
+    const input = await readUrlRequest(request);
+    if (!input.ok) {
       return NextResponse.json(
-        { error: "Content-Type must be application/json" },
-        { status: 400, headers: { "access-control-allow-origin": "*" } },
+        { error: input.error },
+        { status: 400, headers: responseHeaders },
       );
     }
 
-    const body = (await request.json()) as { url?: unknown };
-    if (typeof body.url !== "string" || !body.url.trim()) {
-      return NextResponse.json(
-        { error: "Request body must include a non-empty url string" },
-        { status: 400, headers: { "access-control-allow-origin": "*" } },
-      );
-    }
-
-    const report = await runAudit(body.url.trim());
+    const report = await runAudit(input.url);
     return NextResponse.json(report, {
-      headers: {
-        "cache-control": "no-store",
-        "access-control-allow-origin": "*",
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     if (isAuditInputError(error)) {
       return NextResponse.json(
         { error: error.message },
-        { status: error.status, headers: { "access-control-allow-origin": "*" } },
+        { status: error.status, headers: responseHeaders },
       );
     }
 
@@ -40,7 +35,7 @@ export async function auditHandler(request: NextRequest): Promise<NextResponse> 
 
     return NextResponse.json(
       { error: message },
-      { status: 502, headers: { "access-control-allow-origin": "*" } },
+      { status: 502, headers: responseHeaders },
     );
   }
 }

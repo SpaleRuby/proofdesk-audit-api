@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --experimental-strip-types --test tests/metadata-extractor.test.mjs && node --test tests/rendered-html.test.mjs tests/buyer-example.test.mjs tests/marketplace-audit.test.mjs",
+    "test": "npm run build && node --experimental-strip-types --test tests/managed-hosts.test.mjs tests/metadata-extractor.test.mjs tests/url-request.test.mjs && node --test tests/rendered-html.test.mjs tests/buyer-example.test.mjs tests/marketplace-audit.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
@@ -19,7 +19,8 @@
     "@x402/extensions": "^2.20.0",
     "@x402/next": "^2.20.0",
     "@x402/svm": "^2.20.0",
-    "next": "16.2.6",
+    "next": "16.2.12",
+    "parse5": "8.0.1",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
@@ -32,13 +33,19 @@
     "@vitejs/plugin-rsc": "0.5.26",
     "@x402/fetch": "^2.20.0",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.2.12",
     "react-server-dom-webpack": "19.2.6",
     "typescript": "5.9.3",
     "viem": "^2.55.10",
     "vinext": "0.0.50",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
+  },
+  "overrides": {
+    "fast-uri": "3.1.4",
+    "postcss": "8.5.25",
+    "sharp": "0.35.3",
+    "ws": "8.21.1"
   },
   "type": "module"
 }

@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectProofDeskBase } from "../examples/pay-with-base.mjs";
+import {
+  selectProofDeskBase,
+  validateBuyerTarget,
+} from "../examples/pay-with-base.mjs";
 
 const expected = {
   scheme: "exact",
@@ -31,4 +34,23 @@ test("Base buyer example refuses price or receiver changes", () => {
       ]),
     /refusing to sign/,
   );
+});
+
+test("Base buyer example rejects unsupported targets before payment", () => {
+  assert.equal(
+    validateBuyerTarget("https://preview.github.io/launch"),
+    "https://preview.github.io/launch",
+  );
+  for (const target of [
+    "https://custom-domain.example.net/",
+    "https://github.io.attacker.example.net/",
+    "https://preview.github.io:8443/",
+    "http://preview.github.io/",
+  ]) {
+    assert.throws(
+      () => validateBuyerTarget(target),
+      /managed-hosting domain|standard HTTPS/i,
+      target,
+    );
+  }
 });

@@ -1,3 +1,5 @@
+import { SUPPORTED_MANAGED_HOSTS } from "@/lib/managed-hosts";
+
 const sampleReport = `{
   "score": 82,
   "summary": { "pass": 13, "warn": 3, "fail": 1 },
@@ -52,8 +54,9 @@ export default function Home() {
           <p className="eyebrow"><span className="pulse" /> Live launch QA · x402</p>
           <h1>Catch the embarrassing stuff <em>before</em> you ship.</h1>
           <p className="hero-lede">
-            One POST request turns a public page into a deterministic, developer-ready
-            launch report. No account. No API key. Pay exactly 4¢ in USDC.
+            One POST request turns a supported managed-hosting page into a
+            deterministic, developer-ready launch report. No account. No API key.
+            Pay exactly 4¢ in USDC.
           </p>
           <div className="hero-actions">
             <a className="button primary" href="#use-api">Run an audit — $0.04</a>
@@ -220,13 +223,19 @@ export default function Home() {
             <p className="kicker">One request. Four cents.</p>
             <h2>Give your next launch a final pair of eyes.</h2>
             <p className="cta-copy">
-              Send any public HTTPS page. Payment is requested automatically through
-              the open x402 protocol.
+              Send an HTTPS page on the temporary managed-host allowlist. Payment is
+              requested automatically through the open x402 protocol.
             </p>
             <p className="cta-copy">
               Declared metadata extraction is also available at $0.01 USDC through
               POST /api/metadata. It reads server-returned HTML only, without
               JavaScript rendering or link and asset probes.
+            </p>
+            <p className="cta-copy">
+              <strong>Temporary safety boundary:</strong> arbitrary custom domains are
+              rejected before fetching, and redirects must remain on the same
+              allowlist. Supported apex domains and subdomains:{" "}
+              <code>{SUPPORTED_MANAGED_HOSTS.join(", ")}</code>.
             </p>
           </div>
           <div className="curl-box">

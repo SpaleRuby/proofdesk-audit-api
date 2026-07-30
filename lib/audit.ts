@@ -1,3 +1,6 @@
+import { parse, type DefaultTreeAdapterTypes } from "parse5";
+import { isSupportedManagedHostname } from "./managed-hosts.ts";
+
 export type CheckStatus = "pass" | "warn" | "fail";
 
 export type AuditCheck = {
@@ -103,7 +106,7 @@ const blockedHostSuffixes = [
   ".onion",
 ];
 
-function validatePublicHttpsUrl(raw: string): URL {
+export function validatePublicHttpsUrl(raw: string): URL {
   let url: URL;
 
   try {
@@ -129,6 +132,18 @@ function validatePublicHttpsUrl(raw: string): URL {
     blockedHostSuffixes.some((suffix) => host.endsWith(suffix))
   ) {
     throw new AuditInputError("Only public hostnames are supported");
+  }
+
+  if (!isSupportedManagedHostname(host)) {
+    throw new AuditInputError(
+      "For temporary network safety, only documented managed-hosting domains are supported; arbitrary custom domains are not accepted",
+    );
+  }
+
+  if (url.port && url.port !== "443") {
+    throw new AuditInputError(
+      "Only the standard HTTPS port is supported",
+    );
   }
 
   return url;
@@ -270,35 +285,128 @@ function absoluteUrl(value: string | undefined, base: URL): URL | undefined {
   }
 }
 
+const declaredMetaKeys = new Set([
+  "description",
+  "viewport",
+  "robots",
+  "og:title",
+  "og:description",
+  "og:image",
+  "og:url",
+  "og:type",
+  "og:site_name",
+  "twitter:card",
+  "twitter:title",
+  "twitter:description",
+  "twitter:image",
+]);
+
+type ParsedNode = DefaultTreeAdapterTypes.Node;
+type ParsedElement = DefaultTreeAdapterTypes.Element;
+
+function isParsedElement(node: ParsedNode): node is ParsedElement {
+  return "tagName" in node;
+}
+
+function parsedAttributes(element: ParsedElement) {
+  return new Map(
+    element.attrs.map((attribute) => [
+      attribute.name.toLowerCase(),
+      attribute.value,
+    ]),
+  );
+}
+
+function parsedText(node: ParsedNode): string {
+  if (node.nodeName === "#text") return node.value;
+  if (!("childNodes" in node)) return "";
+  return node.childNodes.map(parsedText).join("");
+}
+
+function scanDeclaredMetadata(html: string) {
+  const values = {
+    title: undefined as string | undefined,
+    language: undefined as string | undefined,
+    meta: new Map<string, string | undefined>(),
+    links: new Map<string, string | undefined>(),
+  };
+  const document = parse(html);
+
+  function visit(node: ParsedNode) {
+    if (isParsedElement(node)) {
+      const tagName = node.tagName.toLowerCase();
+      const attributes = parsedAttributes(node);
+
+      if (tagName === "html" && values.language === undefined) {
+        values.language = attributes.get("lang");
+      } else if (tagName === "title" && values.title === undefined) {
+        values.title = parsedText(node);
+      } else if (tagName === "meta") {
+        const keys = [attributes.get("name"), attributes.get("property")]
+          .filter((key): key is string => typeof key === "string")
+          .map((key) => key.toLowerCase());
+
+        for (const key of keys) {
+          if (declaredMetaKeys.has(key) && !values.meta.has(key)) {
+            values.meta.set(key, attributes.get("content"));
+          }
+        }
+      } else if (tagName === "link") {
+        const relTokens = (attributes.get("rel") ?? "")
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        for (const rel of ["canonical", "icon", "shortcut"]) {
+          if (relTokens.includes(rel) && !values.links.has(rel)) {
+            values.links.set(rel, attributes.get("href"));
+          }
+        }
+      }
+
+      // Metadata inside a template is inert until client code instantiates it.
+      if (tagName === "template") return;
+    }
+
+    if ("childNodes" in node) {
+      for (const child of node.childNodes) visit(child);
+    }
+  }
+
+  visit(document);
+  return values;
+}
+
 function declaredValue(value: string | undefined) {
-  return value?.trim() || null;
+  return value?.replace(/\s+/g, " ").trim() || null;
 }
 
 export function extractDeclaredMetadata(html: string): DeclaredPageMetadata {
-  const titleMatch = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
-  const htmlTag = html.match(/<html\b[^>]*>/i)?.[0] ?? "";
+  const declared = scanDeclaredMetadata(html);
+  const meta = (key: string) => declaredValue(declared.meta.get(key));
+  const link = (rel: string) => declaredValue(declared.links.get(rel));
 
   return {
-    title: titleMatch ? declaredValue(stripTags(titleMatch[1])) : null,
-    description: declaredValue(findMeta(html, "description")),
-    canonical: declaredValue(findLink(html, "canonical")),
-    language: declaredValue(parseAttributes(htmlTag).lang),
-    viewport: declaredValue(findMeta(html, "viewport")),
-    robots: declaredValue(findMeta(html, "robots")),
-    favicon: declaredValue(findLink(html, "icon") ?? findLink(html, "shortcut")),
+    title: declaredValue(declared.title),
+    description: meta("description"),
+    canonical: link("canonical"),
+    language: declaredValue(declared.language),
+    viewport: meta("viewport"),
+    robots: meta("robots"),
+    favicon: link("icon") ?? link("shortcut"),
     openGraph: {
-      title: declaredValue(findMeta(html, "og:title")),
-      description: declaredValue(findMeta(html, "og:description")),
-      image: declaredValue(findMeta(html, "og:image")),
-      url: declaredValue(findMeta(html, "og:url")),
-      type: declaredValue(findMeta(html, "og:type")),
-      siteName: declaredValue(findMeta(html, "og:site_name")),
+      title: meta("og:title"),
+      description: meta("og:description"),
+      image: meta("og:image"),
+      url: meta("og:url"),
+      type: meta("og:type"),
+      siteName: meta("og:site_name"),
     },
     twitter: {
-      card: declaredValue(findMeta(html, "twitter:card")),
-      title: declaredValue(findMeta(html, "twitter:title")),
-      description: declaredValue(findMeta(html, "twitter:description")),
-      image: declaredValue(findMeta(html, "twitter:image")),
+      card: meta("twitter:card"),
+      title: meta("twitter:title"),
+      description: meta("twitter:description"),
+      image: meta("twitter:image"),
     },
   };
 }
@@ -565,9 +673,11 @@ function collectSameHostLinks(html: string, pageUrl: URL): URL[] {
     if (!href || href.startsWith("#") || /^(mailto:|tel:|javascript:|data:)/i.test(href)) continue;
 
     try {
-      const candidate = new URL(href, pageUrl);
+      const candidate = validatePublicHttpsUrl(
+        new URL(href, pageUrl).toString(),
+      );
       candidate.hash = "";
-      if (candidate.protocol !== "https:" || candidate.hostname !== pageUrl.hostname) continue;
+      if (candidate.hostname !== pageUrl.hostname) continue;
       const key = candidate.toString();
       if (key === pageUrl.toString() || seen.has(key)) continue;
       seen.add(key);

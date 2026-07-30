@@ -1,3 +1,5 @@
+import { SUPPORTED_MANAGED_HOSTS } from "./managed-hosts.ts";
+
 const BASE_PAYEE = "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F";
 const SOLANA_PAYEE = "BeNzbeMCKUkgAysej51HpjPDPg57wJYQmUvxC2EQsnXc";
 const PAYAI_FACILITATOR = "https://facilitator.payai.network";
@@ -11,7 +13,7 @@ export function createAgentManifest(requestUrl: string) {
     payout_address: BASE_PAYEE,
     display_name: "ProofDesk Launch Audit API",
     description:
-      "Website and landing-page launch QA for technical SEO, metadata, indexability, page structure, social previews, and a bounded internal-link sample, paid per completed JSON report through x402.",
+      "Launch QA and declared metadata extraction for HTTPS pages on a temporary managed-host allowlist, paid per completed JSON report through x402. Arbitrary custom domains are blocked before fetching.",
     payments: {
       x402: {
         networks: [
@@ -36,14 +38,15 @@ export function createAgentManifest(requestUrl: string) {
       {
         name: "audit_launch_page",
         description:
-          "Audit one public HTTPS website or landing page before launch for technical SEO, title and description metadata, canonical and social tags, meta robots directives, page structure, and a bounded same-host link sample. Returns evidence and suggested fixes as JSON.",
+          "Audit one HTTPS page on a supported managed-hosting domain for technical SEO, metadata, page structure, and a bounded same-host link sample. Arbitrary custom domains are rejected before fetching, and redirects must remain on the allowlist.",
         endpoint: "/api/audit",
         method: "POST",
         parameters: {
           url: {
             type: "string",
             required: true,
-            description: "The public HTTPS page to audit.",
+            description:
+              "An HTTPS page on a documented managed-hosting apex domain or subdomain.",
           },
         },
         returns: {
@@ -68,14 +71,15 @@ export function createAgentManifest(requestUrl: string) {
       {
         name: "extract_page_metadata",
         description:
-          "Extract the title, description, canonical, language, viewport, meta robots, favicon, Open Graph, and Twitter Card values declared in the fetched HTML source of one public HTTPS page. Missing declarations are explicit; no JavaScript rendering, asset fetching, link probing, or platform-preview emulation.",
+          "Extract declared metadata from one HTTPS page on a supported managed-hosting domain. Arbitrary custom domains are rejected before fetching, redirects must remain on the allowlist, and missing declarations are explicit. No JavaScript rendering, asset fetching, link probing, or platform-preview emulation.",
         endpoint: "/api/metadata",
         method: "POST",
         parameters: {
           url: {
             type: "string",
             required: true,
-            description: "The public HTTPS page whose declared metadata should be extracted.",
+            description:
+              "An HTTPS page on a documented managed-hosting apex domain or subdomain.",
           },
         },
         returns: {
@@ -114,7 +118,12 @@ export function createAgentManifest(requestUrl: string) {
         openapi: "/openapi.json",
         agent_instructions: "/llms.txt",
         scope:
-          "Source-level launch preflight only; not penetration testing, legal advice, or a complete accessibility certification.",
+          "Source-level launch preflight for allowlisted managed-hosting pages only; not penetration testing, legal advice, or a complete accessibility certification.",
+        input_policy: {
+          mode: "managed-host-allowlist",
+          custom_domains: false,
+          supported_managed_hosts: SUPPORTED_MANAGED_HOSTS,
+        },
       },
     },
   };

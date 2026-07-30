@@ -1,8 +1,10 @@
+import { SUPPORTED_MANAGED_HOSTS } from "@/lib/managed-hosts";
+
 export const runtime = "edge";
 
 const instructions = `# ProofDesk Launch Audit API
 
-> Deterministic source-level launch QA and declared metadata extraction for public HTTPS pages. No account or API key. Pay per request through x402 v2.
+> Deterministic source-level launch QA and declared metadata extraction for HTTPS pages on a temporary managed-host allowlist. No account or API key. Pay per request through x402 v2.
 
 ## Canonical resources
 
@@ -32,7 +34,11 @@ The metadata endpoint returns the title, description, canonical, language, viewp
 
 ## Scope
 
-Only public HTTPS pages are accepted. ProofDesk performs automated source-level launch heuristics. It is not penetration testing, legal advice, or a complete WCAG accessibility certification.
+For temporary network-safety containment, the URL hostname must be one of these provider-owned managed-hosting domains or a subdomain:
+
+${SUPPORTED_MANAGED_HOSTS.join(", ")}
+
+Arbitrary custom domains are rejected before fetching. Every redirect is checked against the same allowlist, and only standard HTTPS port 443 is accepted. ProofDesk performs automated source-level launch heuristics. It is not penetration testing, legal advice, or a complete WCAG accessibility certification.
 
 ## Assisted service
 

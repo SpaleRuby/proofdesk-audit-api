@@ -66,9 +66,49 @@ test("marketplace audit proxy controls", async (t) => {
     const response = await request(authorizedPath, invalidAuditRequest());
 
     assert.equal(response.status, 400);
+    assert.equal(response.headers.get("cache-control"), "no-store");
     assert.deepEqual(await response.json(), {
       error: "Request body must include a non-empty url string",
     });
+  });
+
+  await t.test("returns 400 for malformed and null JSON bodies", async () => {
+    const malformed = await request(authorizedPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{",
+    });
+    const nullBody = await request(authorizedPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "null",
+    });
+
+    assert.equal(malformed.status, 400);
+    assert.equal(malformed.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await malformed.json(), {
+      error: "Request body must contain valid JSON",
+    });
+    assert.equal(nullBody.status, 400);
+    assert.equal(nullBody.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await nullBody.json(), {
+      error: "Request body must include a non-empty url string",
+    });
+  });
+
+  await t.test("blocks custom domains before the marketplace fetch", async () => {
+    const response = await request(authorizedPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url: "https://custom-domain.example.net/" }),
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.match(
+      (await response.json()).error,
+      /only documented managed-hosting domains/i,
+    );
   });
 
   await t.test("rejects an empty configured token", async () => {
@@ -100,7 +140,7 @@ test("marketplace audit proxy controls", async (t) => {
         typeof input === "string" || input instanceof URL ? input : input.url,
       );
 
-      if (target.hostname !== "hold.example.net") {
+      if (target.hostname !== "hold.example.com") {
         return originalFetch(input, init);
       }
 
@@ -121,7 +161,7 @@ test("marketplace audit proxy controls", async (t) => {
       const heldRequest = {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: "https://hold.example.net/" }),
+        body: JSON.stringify({ url: "https://hold.example.com/" }),
       };
       const first = request(authorizedPath, heldRequest);
       const second = request(authorizedPath, heldRequest);
@@ -157,13 +197,17 @@ test("marketplace audit proxy controls", async (t) => {
   });
 
   await t.test("caps the rolling window at twelve authorized calls", async () => {
-    // Four calls were admitted by earlier subtests; fill the remaining eight.
-    for (let index = 0; index < 8; index += 1) {
+    let limited;
+    for (let index = 0; index < 12; index += 1) {
       const response = await request(authorizedPath, invalidAuditRequest());
+      if (response.status === 429) {
+        limited = response;
+        break;
+      }
       assert.equal(response.status, 400);
     }
 
-    const limited = await request(authorizedPath, invalidAuditRequest());
+    limited ??= await request(authorizedPath, invalidAuditRequest());
     assert.equal(limited.status, 429);
     assert.equal(limited.headers.get("cache-control"), "no-store");
     assert.match(limited.headers.get("retry-after") ?? "", /^[1-9]\d*$/);

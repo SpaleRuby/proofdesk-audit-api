@@ -1,8 +1,9 @@
 # ProofDesk Launch Audit API
 
-ProofDesk turns one public HTTPS page into either a deterministic,
-machine-readable launch report for `$0.04 USDC` or a declared metadata
-response for `$0.01 USDC`. Both paid endpoints use the open x402 protocol.
+ProofDesk turns one HTTPS page on a supported managed-hosting domain into
+either a deterministic, machine-readable launch report for `$0.04 USDC` or a
+declared metadata response for `$0.01 USDC`. Both paid endpoints use the open
+x402 protocol.
 
 Live public URL for the overnight launch:
 `https://idea-thickness-vpn-criteria.trycloudflare.com`
@@ -33,6 +34,24 @@ The paid routes accept:
 A plain request receives HTTP `402` and standard x402 payment requirements.
 An x402-aware client can settle and retry automatically.
 
+### Temporary managed-host safety boundary
+
+Buyer-controlled fetches currently accept only the exact provider-owned apex
+domains below or their subdomains:
+
+`github.io`, `pages.dev`, `vercel.app`, `netlify.app`, `webflow.io`,
+`framer.website`, `onrender.com`, `railway.app`, `surge.sh`,
+`firebaseapp.com`, `web.app`, `readthedocs.io`, `gitbook.io`,
+`wordpress.com`, `myshopify.com`, `wixsite.com`, `carrd.co`,
+`typedream.app`, `trycloudflare.com`, `chatgpt.site`, and the reserved
+`example.com` example domain.
+
+Arbitrary custom domains are rejected with HTTP `400` before the page is
+fetched. Every redirect and same-host link probe is checked against the same
+allowlist, and only standard HTTPS port 443 is accepted. This is a temporary
+fail-closed containment policy until page fetching runs in a separately
+isolated egress environment.
+
 ```bash
 curl -X POST \
   "https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit" \
@@ -59,8 +78,9 @@ These curl commands only inspect payment challenges; they do not settle them.
 For a complete Base purchase, use the checked-in
 [`examples/pay-with-base.mjs`](examples/pay-with-base.mjs) client. It reads the
 wallet key from the environment, requires an explicit 4-cent confirmation,
-and refuses to sign if the price, USDC contract, network, or receiver differs
-from the published ProofDesk offer.
+rejects non-allowlisted targets before payment, and refuses to sign if the
+price, USDC contract, network, or receiver differs from the published
+ProofDesk offer.
 
 ```powershell
 $walletKey = Read-Host "Funded Base wallet private key" -AsSecureString
@@ -158,7 +178,8 @@ npm run build
 npm test
 ```
 
-Both public paid routes accept only public HTTPS hostnames, follow at most
-three validated redirects, cap HTML input at 1.25 MB, and use bounded request
-timeouts. The full audit samples at most six same-host links; metadata
-extraction performs no link or asset probes.
+Both public paid routes accept only the managed-hosting apex domains and
+subdomains listed above, follow at most three allowlist-validated redirects,
+cap HTML input at 1.25 MB, and use bounded request timeouts. The full audit
+samples at most six allowlist-validated same-host links; metadata extraction
+performs no link or asset probes.

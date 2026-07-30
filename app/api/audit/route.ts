@@ -11,6 +11,11 @@ import { ExactSvmScheme } from "@x402/svm/exact/server";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import { facilitator } from "@payai/facilitator";
 import { getPublicUrl } from "../../../lib/public-url";
+import {
+  MANAGED_HOST_POLICY_SUMMARY,
+  SUPPORTED_MANAGED_HOSTS,
+} from "../../../lib/managed-hosts";
+import { rejectInvalidPageRequest } from "../../../lib/page-request-preflight";
 import { auditHandler } from "./handler";
 
 export const runtime = "edge";
@@ -34,7 +39,7 @@ const auditRoute: RouteConfig = {
     },
   ],
   description:
-    "Audit a public website or landing page before launch for technical SEO, title and description metadata, canonical and social tags, meta robots directives, page structure, and a bounded same-host link sample.",
+    `Audit a page on a supported managed-hosting domain before launch for technical SEO, metadata, page structure, and a bounded same-host link sample. ${MANAGED_HOST_POLICY_SUMMARY}`,
   mimeType: "application/json",
   serviceName: "ProofDesk",
   tags: [
@@ -58,7 +63,8 @@ const auditRoute: RouteConfig = {
         url: {
           type: "string",
           pattern: "^https://",
-          description: "Public HTTPS page to audit",
+          description:
+            `HTTPS page on a supported managed-hosting domain. Accepted apex domains and subdomains: ${SUPPORTED_MANAGED_HOSTS.join(", ")}. Arbitrary custom domains are rejected.`,
         },
       },
       required: ["url"],
@@ -158,11 +164,14 @@ async function ensureInitialized() {
 }
 
 export async function POST(request: NextRequest) {
+  const preflight = await rejectInvalidPageRequest(request);
+  if (!preflight.ok) return preflight.response;
+
   await ensureInitialized();
   const publicRequestInit: RequestInit & { duplex: "half" } = {
     method: request.method,
     headers: request.headers,
-    body: request.body,
+    body: preflight.body,
     signal: request.signal,
     duplex: "half",
   };

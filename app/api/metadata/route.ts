@@ -11,6 +11,11 @@ import { ExactSvmScheme } from "@x402/svm/exact/server";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import { facilitator } from "@payai/facilitator";
 import { getPublicUrl } from "../../../lib/public-url";
+import {
+  MANAGED_HOST_POLICY_SUMMARY,
+  SUPPORTED_MANAGED_HOSTS,
+} from "../../../lib/managed-hosts";
+import { rejectInvalidPageRequest } from "../../../lib/page-request-preflight";
 import { metadataHandler } from "./handler";
 
 export const runtime = "edge";
@@ -34,7 +39,7 @@ const metadataRoute: RouteConfig = {
     },
   ],
   description:
-    "Extract declared SEO and social-preview metadata from one public HTTPS page: title, description, canonical, Open Graph, Twitter Card, favicon, language, viewport, and meta robots.",
+    `Extract declared SEO and social-preview metadata from a page on a supported managed-hosting domain. ${MANAGED_HOST_POLICY_SUMMARY}`,
   mimeType: "application/json",
   serviceName: "ProofDesk",
   tags: [
@@ -57,7 +62,8 @@ const metadataRoute: RouteConfig = {
         url: {
           type: "string",
           pattern: "^https://",
-          description: "Public HTTPS page whose declared metadata should be extracted",
+          description:
+            `HTTPS page on a supported managed-hosting domain. Accepted apex domains and subdomains: ${SUPPORTED_MANAGED_HOSTS.join(", ")}. Arbitrary custom domains are rejected.`,
         },
       },
       required: ["url"],
@@ -171,11 +177,14 @@ async function ensureInitialized() {
 }
 
 export async function POST(request: NextRequest) {
+  const preflight = await rejectInvalidPageRequest(request);
+  if (!preflight.ok) return preflight.response;
+
   await ensureInitialized();
   const publicRequestInit: RequestInit & { duplex: "half" } = {
     method: request.method,
     headers: request.headers,
-    body: request.body,
+    body: preflight.body,
     signal: request.signal,
     duplex: "half",
   };

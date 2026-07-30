@@ -35,6 +35,9 @@ test("server-renders the ProofDesk landing page", async () => {
   assert.match(html, /Run an audit — \$0\.04/);
   assert.match(html, /Declared metadata extraction/i);
   assert.match(html, /\$0\.01 USDC/);
+  assert.match(html, /Temporary safety boundary/i);
+  assert.match(html, /arbitrary custom domains are\s+rejected/i);
+  assert.match(html, /github\.io.*chatgpt\.site/i);
   assert.match(html, /Request an assisted audit/);
   assert.match(html, /Run the Base payment example/);
   assert.match(html, /refuses a changed price or receiver/);
@@ -72,6 +75,10 @@ test("serves health, example and discovery responses", async () => {
     "/api/metadata": "$0.01",
   });
   assert.deepEqual(health.payment.networks, ["Base", "Solana"]);
+  assert.equal(health.inputPolicy.mode, "managed-host-allowlist");
+  assert.equal(health.inputPolicy.customDomains, false);
+  assert.ok(health.inputPolicy.supportedManagedHosts.includes("github.io"));
+  assert.ok(health.inputPolicy.supportedManagedHosts.includes("chatgpt.site"));
   assert.equal(example.score, 82);
   assert.ok(Array.isArray(example.checks));
   assert.equal(openapi.openapi, "3.1.0");
@@ -95,6 +102,16 @@ test("serves health, example and discovery responses", async () => {
   assert.equal(paidOperation.responses["402"].description, "Payment Required");
   const metadataOperation = openapi.paths["/api/metadata"].post;
   assert.ok(metadataOperation);
+  assert.deepEqual(
+    openapi.info["x-input-policy"].supportedManagedHosts,
+    health.inputPolicy.supportedManagedHosts,
+  );
+  assert.equal(openapi.info["x-input-policy"].customDomains, false);
+  assert.deepEqual(
+    metadataOperation.requestBody.content["application/json"].schema.properties
+      .url["x-host-suffix-allowlist"],
+    health.inputPolicy.supportedManagedHosts,
+  );
   assert.equal(
     metadataOperation["x-payment-info"].price.amount,
     "0.010000",
@@ -107,6 +124,8 @@ test("serves health, example and discovery responses", async () => {
   assert.match(llms, /ProofDesk Launch Audit API/);
   assert.match(llms, /Declared metadata extraction — \$0\.01 USDC/);
   assert.match(llms, /does not render JavaScript.*probe links/i);
+  assert.match(llms, /Arbitrary custom domains are rejected before fetching/i);
+  assert.match(llms, /github\.io.*chatgpt\.site/i);
   assert.equal(agent.version, "1.4");
   assert.equal(agent.origin, "proofdesk-audit-api.konstanta-work-x.chatgpt.site");
   assert.equal(agent.intents[0].name, "audit_launch_page");
@@ -124,6 +143,11 @@ test("serves health, example and discovery responses", async () => {
   assert.equal(metadataIntent.endpoint, "/api/metadata");
   assert.equal(metadataIntent.price.amount, 0.01);
   assert.equal(metadataIntent.payments.x402.direct_price, 0.01);
+  assert.deepEqual(
+    agent.extensions.proofdesk.input_policy.supported_managed_hosts,
+    health.inputPolicy.supportedManagedHosts,
+  );
+  assert.equal(agent.extensions.proofdesk.input_policy.custom_domains, false);
 });
 
 test("uses the forwarded HTTPS protocol for proxy discovery", async () => {
@@ -139,6 +163,79 @@ test("uses the forwarded HTTPS protocol for proxy discovery", async () => {
     openapi.servers[0].url,
     "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site",
   );
+});
+
+test("rejects unsupported targets before issuing a payment challenge", async () => {
+  for (const path of ["/api/audit", "/api/metadata"]) {
+    const response = await request(path, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ url: "https://customer-owned-domain.net" }),
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal(response.headers.get("payment-required"), null);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    await assert.doesNotReject(async () => {
+      const body = await response.json();
+      assert.match(body.error, /managed-hosting domains/i);
+    });
+  }
+});
+
+test("rejects request properties outside the published schema before payment", async () => {
+  for (const path of ["/api/audit", "/api/metadata"]) {
+    const response = await request(path, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com",
+        callback: "https://example.com",
+      }),
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal(response.headers.get("payment-required"), null);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    const body = await response.json();
+    assert.match(body.error, /properties other than url/i);
+  }
+});
+
+test("rejects an oversized chunked body before issuing a payment challenge", async () => {
+  const encoder = new TextEncoder();
+  const oversizedBody = new ReadableStream({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode('{"url":"https://example.com","padding":"'),
+      );
+      controller.enqueue(encoder.encode("x".repeat(4_096)));
+      controller.enqueue(encoder.encode('"}'));
+      controller.close();
+    },
+  });
+  const response = await request("/api/audit", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+    body: oversizedBody,
+    duplex: "half",
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.headers.get("payment-required"), null);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  const body = await response.json();
+  assert.match(body.error, /4096 bytes/i);
 });
 
 test("returns valid x402 requirements for both payment networks", async () => {
@@ -166,6 +263,11 @@ test("returns valid x402 requirements for both payment networks", async () => {
     "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit",
   );
   assert.equal(payment.extensions.bazaar.info.input.method, "POST");
+  assert.match(
+    payment.extensions.bazaar.schema.properties.input.properties.body.properties
+      .url.description,
+    /github\.io.*chatgpt\.site/i,
+  );
 });
 
 test("returns exact metadata x402 requirements for both payment networks", async () => {
@@ -193,4 +295,9 @@ test("returns exact metadata x402 requirements for both payment networks", async
     "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/metadata",
   );
   assert.equal(payment.extensions.bazaar.info.input.method, "POST");
+  assert.match(
+    payment.extensions.bazaar.schema.properties.input.properties.body.properties
+      .url.description,
+    /github\.io.*chatgpt\.site/i,
+  );
 });

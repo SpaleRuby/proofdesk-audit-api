@@ -1,4 +1,8 @@
 import { getPublicOrigin } from "../../lib/public-url";
+import {
+  MANAGED_HOST_POLICY_SUMMARY,
+  SUPPORTED_MANAGED_HOSTS,
+} from "../../lib/managed-hosts";
 
 export const runtime = "edge";
 
@@ -10,9 +14,15 @@ export async function GET(request: Request) {
       title: "ProofDesk Launch Audit API",
       version: "1.0.0",
       description:
-        "Deterministic website launch checks and declared metadata extraction for public HTTPS pages. The full audit costs $0.04 USDC; metadata extraction costs $0.01 USDC through x402 on Base or Solana.",
+        "Deterministic launch checks and declared metadata extraction for HTTPS pages on the documented managed-hosting allowlist. Arbitrary custom domains are temporarily blocked. The full audit costs $0.04 USDC; metadata extraction costs $0.01 USDC through x402 on Base or Solana.",
       "x-guidance":
-        "Use POST /api/audit for an evidence-backed launch report or POST /api/metadata for raw declared metadata values. Both accept a JSON body containing one public HTTPS URL and return an x402 challenge before payment. Metadata extraction reads server-returned HTML without JavaScript rendering or link probes. Use GET /api/example to inspect the audit response shape for free.",
+        "Use POST /api/audit for an evidence-backed launch report or POST /api/metadata for raw declared metadata values. Both accept one allowlisted managed-host HTTPS URL and return an x402 challenge before payment. Redirects are subject to the same allowlist. Metadata extraction reads server-returned HTML without JavaScript rendering or link probes. Use GET /api/example to inspect the audit response shape for free.",
+      "x-input-policy": {
+        mode: "managed-host-allowlist",
+        customDomains: false,
+        summary: MANAGED_HOST_POLICY_SUMMARY,
+        supportedManagedHosts: SUPPORTED_MANAGED_HOSTS,
+      },
       contact: {
         url: "https://github.com/SpaleRuby/proofdesk-audit-api",
       },
@@ -51,7 +61,7 @@ export async function GET(request: Request) {
           summary:
             "Website launch audit: SEO metadata, page structure, and links",
           description:
-            "Check one public HTTPS website or landing page before launch for title and description metadata, canonical and social tags, meta robots directives, page structure, and a bounded same-host link sample. Returns evidence-backed JSON issues and fixes after $0.04 USDC is settled on Base or Solana. Source-level launch QA only; not security testing.",
+            "Check one HTTPS page on a supported managed-hosting domain before launch for metadata, page structure, and a bounded same-host link sample. Arbitrary custom domains are rejected before fetching, and redirects must remain on the allowlist. Returns evidence-backed JSON issues and fixes after $0.04 USDC is settled on Base or Solana. Source-level launch QA only; not security testing.",
           tags: ["website audit", "landing page", "technical SEO", "launch readiness"],
           "x-payment-info": {
             price: {
@@ -74,7 +84,9 @@ export async function GET(request: Request) {
                       type: "string",
                       format: "uri",
                       pattern: "^https://",
-                      description: "Public HTTPS page to inspect.",
+                      description:
+                        "HTTPS page whose hostname is an allowlisted managed-host apex or subdomain.",
+                      "x-host-suffix-allowlist": SUPPORTED_MANAGED_HOSTS,
                     },
                   },
                 },
@@ -90,7 +102,8 @@ export async function GET(request: Request) {
               content: { "application/json": { schema: { $ref: "#/components/schemas/AuditReport" } } },
             },
             "400": {
-              description: "Invalid request or unsupported URL",
+              description:
+                "Invalid request, custom domain, or non-allowlisted URL",
               content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
             },
             "402": {
@@ -114,7 +127,7 @@ export async function GET(request: Request) {
           operationId: "extractPageMetadata",
           summary: "Extract declared SEO and social-preview metadata",
           description:
-            "Extract title, description, canonical, language, viewport, meta robots, favicon, Open Graph, and Twitter Card declarations from the fetched HTML source of one public HTTPS page. No JavaScript rendering, asset fetching, link probing, or social-platform preview emulation is performed. Costs $0.01 USDC on Base or Solana.",
+            "Extract title, description, canonical, language, viewport, meta robots, favicon, Open Graph, and Twitter Card declarations from an HTTPS page on a supported managed-hosting domain. Arbitrary custom domains are rejected before fetching, and redirects must remain on the allowlist. No JavaScript rendering, asset fetching, link probing, or social-platform preview emulation is performed. Costs $0.01 USDC on Base or Solana.",
           tags: ["metadata", "technical SEO", "social preview", "Open Graph"],
           "x-payment-info": {
             price: {
@@ -137,7 +150,9 @@ export async function GET(request: Request) {
                       type: "string",
                       format: "uri",
                       pattern: "^https://",
-                      description: "Public HTTPS page whose declared metadata should be extracted.",
+                      description:
+                        "HTTPS page whose hostname is an allowlisted managed-host apex or subdomain.",
+                      "x-host-suffix-allowlist": SUPPORTED_MANAGED_HOSTS,
                     },
                   },
                 },
@@ -153,7 +168,8 @@ export async function GET(request: Request) {
               content: { "application/json": { schema: { $ref: "#/components/schemas/MetadataReport" } } },
             },
             "400": {
-              description: "Invalid request or unsupported URL",
+              description:
+                "Invalid request, custom domain, or non-allowlisted URL",
               content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
             },
             "402": {
