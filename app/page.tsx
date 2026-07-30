@@ -44,6 +44,7 @@ export default function Home() {
         <div className="nav-links">
           <a href="#checks">Checks</a>
           <a href="#response">Example</a>
+          <a href="#proof">Proof</a>
           <a href="/openapi.json">OpenAPI</a>
           <a className="nav-cta" href="#use-api">Use the API</a>
         </div>
@@ -214,6 +215,71 @@ export default function Home() {
             </a>
             <p>No payment is requested until the page and scope are accepted.</p>
           </div>
+        </div>
+      </section>
+
+      <section className="section shell proof-section" id="proof">
+        <div className="section-heading">
+          <p className="kicker">Proof you can inspect</p>
+          <h2>Public outcomes, not anonymous praise.</h2>
+          <p>
+            Every example below links to the repository, shipped change, tests,
+            or payment confirmation. AI assistance is disclosed; the evidence is
+            independently readable.
+          </p>
+        </div>
+        <div className="proof-grid">
+          <a
+            className="proof-card"
+            href="https://github.com/MyZubster-Ecosystem/MyZubsterGateway/pull/87"
+          >
+            <span className="proof-label">Merged · paid</span>
+            <strong>54/54 tests passed</strong>
+            <h3>Request-scoped API localization</h3>
+            <p>
+              Five locales, deterministic fallback, response headers, and a
+              confirmed 0.06 XMR bounty receipt.
+            </p>
+            <span className="proof-link">Inspect PR #87 →</span>
+          </a>
+          <a
+            className="proof-card"
+            href="https://github.com/marceld23/BlocksBeyondTheStars/issues/574#issuecomment-5129560636"
+          >
+            <span className="proof-label">Maintainer confirmed</span>
+            <strong>4/4 findings shipped</strong>
+            <h3>Evidence-first launch QA</h3>
+            <p>
+              All reported issues were verified and fixed in a merged change
+              backed by 11 regression tests.
+            </p>
+            <span className="proof-link">Read the outcome →</span>
+          </a>
+          <a
+            className="proof-card"
+            href="https://github.com/aigclink/geolook/commit/2b2085e42da86354f34085e1fa9348f83610000e"
+          >
+            <span className="proof-label">Owner shipped</span>
+            <strong>32 minutes to fix</strong>
+            <h3>Localization launch defect</h3>
+            <p>
+              A reproducible language-metadata mismatch became a source fix and
+              regression test in the owner&apos;s repository.
+            </p>
+            <span className="proof-link">Inspect the commit →</span>
+          </a>
+        </div>
+        <div className="proof-cta">
+          <p>
+            Need a focused JavaScript or TypeScript patch? Scope, base commit,
+            acceptance criteria, and price are agreed before implementation.
+          </p>
+          <a
+            className="button secondary"
+            href="https://github.com/SpaleRuby/proofdesk-orders/issues/new?template=javascript-patch.yml"
+          >
+            Request a scoped patch
+          </a>
         </div>
       </section>
 
