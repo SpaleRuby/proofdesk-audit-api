@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { createAgentManifest } from "../lib/agent-manifest";
 
 interface Env {
   ASSETS: {
@@ -29,6 +30,15 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/.well-known/agent.json") {
+      return Response.json(createAgentManifest(request.url), {
+        headers: {
+          "cache-control": "public, max-age=300",
+          "access-control-allow-origin": "*",
+        },
+      });
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

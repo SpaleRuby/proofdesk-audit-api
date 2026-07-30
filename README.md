@@ -17,6 +17,7 @@ restarted.
 - `GET /api/example` — free representative response
 - `GET /openapi.json` — OpenAPI 3.1 description
 - `GET /llms.txt` — compact agent-facing instructions
+- `GET /.well-known/agent.json` — agent.json 1.4 capability and payment manifest
 - `POST /api/audit` — paid launch audit
 
 The paid route accepts:

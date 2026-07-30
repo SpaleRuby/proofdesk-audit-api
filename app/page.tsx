@@ -242,6 +242,7 @@ export default function Home() {
           <a href="/api/health">Status</a>
           <a href="/api/example">Example</a>
           <a href="/openapi.json">OpenAPI</a>
+          <a href="/.well-known/agent.json">agent.json</a>
         </div>
       </footer>
     </main>

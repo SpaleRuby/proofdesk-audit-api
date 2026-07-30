@@ -35,23 +35,26 @@ test("server-renders the ProofDesk landing page", async () => {
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|nightmoth/i);
 });
 
-test("serves health, example and OpenAPI responses", async () => {
-  const [healthResponse, exampleResponse, openapiResponse, llmsResponse] = await Promise.all([
+test("serves health, example and discovery responses", async () => {
+  const [healthResponse, exampleResponse, openapiResponse, llmsResponse, agentResponse] = await Promise.all([
     request("/api/health"),
     request("/api/example"),
     request("/openapi.json"),
     request("/llms.txt"),
+    request("/.well-known/agent.json"),
   ]);
 
   assert.equal(healthResponse.status, 200);
   assert.equal(exampleResponse.status, 200);
   assert.equal(openapiResponse.status, 200);
   assert.equal(llmsResponse.status, 200);
+  assert.equal(agentResponse.status, 200);
 
-  const [health, example, openapi] = await Promise.all([
+  const [health, example, openapi, agent] = await Promise.all([
     healthResponse.json(),
     exampleResponse.json(),
     openapiResponse.json(),
+    agentResponse.json(),
   ]);
 
   assert.equal(health.ok, true);
@@ -72,6 +75,14 @@ test("serves health, example and OpenAPI responses", async () => {
   });
   assert.equal(paidOperation.responses["402"].description, "Payment Required");
   assert.match(await llmsResponse.text(), /ProofDesk Launch Audit API/);
+  assert.equal(agent.version, "1.4");
+  assert.equal(agent.origin, "proofdesk-audit-api.konstanta-work-x.chatgpt.site");
+  assert.equal(agent.intents[0].name, "audit_launch_page");
+  assert.deepEqual(agent.intents[0].price.network, ["base", "solana"]);
+  assert.deepEqual(
+    agent.payments.x402.networks.map((network) => network.network),
+    ["base", "solana"],
+  );
 });
 
 test("returns valid x402 requirements for both payment networks", async () => {
