@@ -1,7 +1,9 @@
+import { getPublicOrigin } from "../../lib/public-url";
+
 export const runtime = "edge";
 
 export async function GET(request: Request) {
-  const origin = new URL(request.url).origin;
+  const origin = getPublicOrigin(request);
   const specification = {
     openapi: "3.1.0",
     info: {
@@ -21,6 +23,7 @@ export async function GET(request: Request) {
         get: {
           operationId: "getHealth",
           summary: "Check service health and payment networks",
+          security: [],
           responses: {
             "200": {
               description: "Service status",
@@ -33,6 +36,7 @@ export async function GET(request: Request) {
         get: {
           operationId: "getExampleAudit",
           summary: "Get a free example audit response",
+          security: [],
           responses: {
             "200": {
               description: "Example launch report",

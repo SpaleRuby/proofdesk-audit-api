@@ -10,6 +10,7 @@ import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { ExactSvmScheme } from "@x402/svm/exact/server";
 import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import { facilitator } from "@payai/facilitator";
+import { getPublicUrl } from "../../../lib/public-url";
 import { auditHandler } from "./handler";
 
 export const runtime = "edge";
@@ -18,7 +19,6 @@ const BASE_MAINNET = "eip155:8453";
 const SOLANA_MAINNET = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
 const auditRoute: RouteConfig = {
-  resource: "https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit",
   accepts: [
     {
       scheme: "exact",
@@ -150,7 +150,17 @@ async function ensureInitialized() {
 
 export async function POST(request: NextRequest) {
   await ensureInitialized();
-  return protectedPost(request);
+  const publicRequestInit: RequestInit & { duplex: "half" } = {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+    signal: request.signal,
+    duplex: "half",
+  };
+  const publicRequest = new NextRequest(
+    new Request(getPublicUrl(request), publicRequestInit),
+  );
+  return protectedPost(publicRequest);
 }
 
 export async function OPTIONS() {

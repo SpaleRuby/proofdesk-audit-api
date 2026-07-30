@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-async function request(path, init) {
+async function request(
+  path,
+  init,
+  origin = "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site",
+) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request(`https://proofdesk-audit-api.konstanta-work-x.chatgpt.site${path}`, init),
+    new Request(`${origin}${path}`, init),
     {
       ASSETS: {
         fetch: async () => new Response("Not found", { status: 404 }),
@@ -64,7 +68,13 @@ test("serves health, example and discovery responses", async () => {
   assert.equal(example.score, 82);
   assert.ok(Array.isArray(example.checks));
   assert.equal(openapi.openapi, "3.1.0");
+  assert.equal(
+    openapi.servers[0].url,
+    "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site",
+  );
   assert.match(openapi.info["x-guidance"], /POST \/api\/audit/);
+  assert.deepEqual(openapi.paths["/api/health"].get.security, []);
+  assert.deepEqual(openapi.paths["/api/example"].get.security, []);
   const paidOperation = openapi.paths["/api/audit"].post;
   assert.ok(paidOperation);
   assert.deepEqual(paidOperation["x-payment-info"], {
@@ -87,8 +97,23 @@ test("serves health, example and discovery responses", async () => {
   );
 });
 
+test("uses the forwarded HTTPS protocol for proxy discovery", async () => {
+  const response = await request(
+    "/openapi.json",
+    { headers: { "x-forwarded-proto": "https" } },
+    "http://proofdesk-audit-api.konstanta-work-x.chatgpt.site",
+  );
+
+  assert.equal(response.status, 200);
+  const openapi = await response.json();
+  assert.equal(
+    openapi.servers[0].url,
+    "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site",
+  );
+});
+
 test("returns valid x402 requirements for both payment networks", async () => {
-  const response = await request("/api/audit", {
+  const response = await request("/api/audit?source=regression", {
     method: "POST",
     headers: {
       accept: "application/json",
@@ -107,5 +132,9 @@ test("returns valid x402 requirements for both payment networks", async () => {
     ["eip155:8453", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"],
   );
   assert.deepEqual(payment.accepts.map((option) => option.amount), ["100000", "100000"]);
+  assert.equal(
+    payment.resource.url,
+    "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit",
+  );
   assert.equal(payment.extensions.bazaar.info.input.method, "POST");
 });
