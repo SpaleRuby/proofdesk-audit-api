@@ -4,8 +4,12 @@ ProofDesk turns one public HTTPS page into a deterministic, machine-readable
 launch report. The paid endpoint uses the open x402 protocol and costs
 `$0.10 USDC` per completed request.
 
-Live URL:
-`https://proofdesk-audit-api.konstanta-work-x.chatgpt.site`
+Live public URL for the overnight launch:
+`https://idea-thickness-vpn-criteria.trycloudflare.com`
+
+This is an official Cloudflare Quick Tunnel and is intentionally treated as a
+temporary launch endpoint. It has no uptime SLA and changes if the tunnel is
+restarted.
 
 ## Endpoints
 
@@ -27,7 +31,7 @@ An x402-aware client can settle and retry automatically.
 
 ```bash
 curl -X POST \
-  "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit" \
+  "https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit" \
   -H "content-type: application/json" \
   -d '{"url":"https://example.com"}'
 ```

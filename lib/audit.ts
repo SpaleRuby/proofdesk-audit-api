@@ -106,7 +106,7 @@ async function fetchPage(startUrl: URL) {
       redirect: "manual",
       headers: {
         accept: "text/html,application/xhtml+xml",
-        "user-agent": "ProofDesk-Launch-Audit/1.0 (+https://proofdesk-audit-api.konstanta-work-x.chatgpt.site)",
+        "user-agent": "ProofDesk-Launch-Audit/1.0 (+https://idea-thickness-vpn-criteria.trycloudflare.com)",
       },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });

@@ -18,7 +18,7 @@ const sampleReport = `{
   "disclaimer": "Source-level launch heuristics, not a full WCAG audit."
 }`;
 
-const curlExample = `curl -X POST "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit" \\
+const curlExample = `curl -X POST "https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit" \\
   -H "Content-Type: application/json" \\
   -d '{"url":"https://example.com"}'`;
 

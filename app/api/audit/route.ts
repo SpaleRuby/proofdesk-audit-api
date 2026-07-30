@@ -18,6 +18,7 @@ const BASE_MAINNET = "eip155:8453";
 const SOLANA_MAINNET = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
 const auditRoute: RouteConfig = {
+  resource: "https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit",
   accepts: [
     {
       scheme: "exact",
