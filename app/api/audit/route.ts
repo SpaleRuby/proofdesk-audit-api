@@ -22,22 +22,31 @@ const auditRoute: RouteConfig = {
   accepts: [
     {
       scheme: "exact",
-      price: "$0.10",
+      price: "$0.04",
       network: BASE_MAINNET,
       payTo: "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F",
     },
     {
       scheme: "exact",
-      price: "$0.10",
+      price: "$0.04",
       network: SOLANA_MAINNET,
       payTo: "BeNzbeMCKUkgAysej51HpjPDPg57wJYQmUvxC2EQsnXc",
     },
   ],
   description:
-    "Deterministic source-level launch report for a public HTTPS page, with metadata, indexability, structure, social preview, and bounded link checks.",
+    "Audit a public website or landing page before launch for technical SEO, title and description metadata, canonical and social tags, meta robots directives, page structure, and a bounded same-host link sample.",
   mimeType: "application/json",
   serviceName: "ProofDesk",
-  tags: ["website", "launch", "quality", "seo", "metadata"],
+  tags: [
+    "website",
+    "landing-page",
+    "launch-readiness",
+    "technical-seo",
+    "metadata",
+    "meta-robots",
+    "internal-links",
+    "open-graph",
+  ],
   extensions: declareDiscoveryExtension({
     bodyType: "json",
     input: {

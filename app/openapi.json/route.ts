@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       title: "ProofDesk Launch Audit API",
       version: "1.0.0",
       description:
-        "Deterministic source-level launch checks for a public HTTPS page. The audit endpoint costs $0.10 USDC through x402 on Base or Solana.",
+        "Deterministic website and landing-page launch checks for technical SEO, metadata, indexability, page structure, social previews, and a bounded internal-link sample. The audit endpoint costs $0.04 USDC through x402 on Base or Solana.",
       "x-guidance":
         "Use POST /api/audit with a JSON body containing one public HTTPS URL. An unpaid request returns an x402 challenge; after payment, the operation returns a structured source-level launch report. Use GET /api/example to inspect the response shape for free. Do not treat the result as penetration testing or a complete accessibility certification.",
       contact: {
@@ -48,14 +48,16 @@ export async function GET(request: Request) {
       "/api/audit": {
         post: {
           operationId: "auditLaunchPage",
-          summary: "Audit a public HTTPS launch page",
+          summary:
+            "Website launch audit: SEO metadata, page structure, and links",
           description:
-            "Returns HTTP 402 with x402 payment requirements until $0.10 USDC is settled on Base or Solana.",
+            "Check one public HTTPS website or landing page before launch for title and description metadata, canonical and social tags, meta robots directives, page structure, and a bounded same-host link sample. Returns evidence-backed JSON issues and fixes after $0.04 USDC is settled on Base or Solana. Source-level launch QA only; not security testing.",
+          tags: ["website audit", "landing page", "technical SEO", "launch readiness"],
           "x-payment-info": {
             price: {
               mode: "fixed",
               currency: "USD",
-              amount: "0.100000",
+              amount: "0.040000",
             },
             protocols: [{ x402: {} }],
           },

@@ -8,7 +8,7 @@ export async function GET() {
       version: "1.0.0",
       payment: {
         protocol: "x402",
-        price: "$0.10",
+        price: "$0.04",
         asset: "USDC",
         networks: ["Base", "Solana"],
       },

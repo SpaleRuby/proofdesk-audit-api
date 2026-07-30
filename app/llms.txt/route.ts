@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 const instructions = `# ProofDesk Launch Audit API
 
-> Deterministic source-level launch QA for public HTTPS pages. No account or API key. The paid endpoint costs $0.10 USDC through x402 v2.
+> Deterministic source-level launch QA for public HTTPS pages. No account or API key. The paid endpoint costs $0.04 USDC through x402 v2.
 
 ## Canonical resources
 
@@ -18,7 +18,7 @@ POST https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit
 Content-Type: application/json
 Body: {"url":"https://example.com"}
 
-An unpaid request returns HTTP 402 and a PAYMENT-REQUIRED header. Payment options are $0.10 USDC on Base mainnet or Solana mainnet. The response is JSON with a score, pass/warn/fail counts, evidence, prioritized fixes, and a bounded same-host link sample.
+An unpaid request returns HTTP 402 and a PAYMENT-REQUIRED header. Payment options are $0.04 USDC on Base mainnet or Solana mainnet. The response is JSON with a score, pass/warn/fail counts, evidence, prioritized fixes, and a bounded same-host link sample. The report checks technical SEO and launch-readiness signals including title and description metadata, canonical and social tags, meta robots directives, page structure, and links.
 
 ## Scope
 

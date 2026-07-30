@@ -53,10 +53,10 @@ export default function Home() {
           <h1>Catch the embarrassing stuff <em>before</em> you ship.</h1>
           <p className="hero-lede">
             One POST request turns a public page into a deterministic, developer-ready
-            launch report. No account. No API key. Pay exactly 10¢ in USDC.
+            launch report. No account. No API key. Pay exactly 4¢ in USDC.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="#use-api">Run an audit — $0.10</a>
+            <a className="button primary" href="#use-api">Run an audit — $0.04</a>
             <a className="button secondary" href="/api/example">See a free response</a>
           </div>
           <div className="trust-row" aria-label="Service facts">
@@ -163,7 +163,7 @@ export default function Home() {
           </article>
           <article>
             <span>2</span>
-            <h3>Pay 10¢ USDC</h3>
+            <h3>Pay 4¢ USDC</h3>
             <p>Your client settles on Base or Solana. No subscription.</p>
           </article>
           <article>
@@ -217,7 +217,7 @@ export default function Home() {
       <section className="cta-section" id="use-api">
         <div className="shell cta-grid">
           <div>
-            <p className="kicker">One request. Ten cents.</p>
+            <p className="kicker">One request. Four cents.</p>
             <h2>Give your next launch a final pair of eyes.</h2>
             <p className="cta-copy">
               Send any public HTTPS page. Payment is requested automatically through
@@ -225,11 +225,11 @@ export default function Home() {
             </p>
           </div>
           <div className="curl-box">
-            <div><span>POST /api/audit</span><span>$0.10 USDC</span></div>
+            <div><span>POST /api/audit</span><span>$0.04 USDC</span></div>
             <pre><code>{curlExample}</code></pre>
             <p>
               This curl command shows the standard 402 challenge; it does not pay.
-              The checked-in Base buyer client requires explicit 10¢ confirmation
+              The checked-in Base buyer client requires explicit 4¢ confirmation
               and refuses a changed price or receiver.
             </p>
             <a

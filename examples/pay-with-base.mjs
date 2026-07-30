@@ -9,7 +9,7 @@ const API_BASE =
 const NETWORK = "eip155:8453";
 const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const PAYEE = "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F";
-const AMOUNT = "100000";
+const AMOUNT = "40000";
 
 export function selectProofDeskBase(_version, options) {
   const exact = options.find(
@@ -44,9 +44,12 @@ function requireInput() {
       "Set EVM_PRIVATE_KEY to a funded Base wallet key. Never paste or commit it.",
     );
   }
-  if (process.env.PROOFDESK_CONFIRM_10_CENT_PAYMENT !== "YES") {
+  const paymentConfirmed =
+    process.env.PROOFDESK_CONFIRM_4_CENT_PAYMENT === "YES" ||
+    process.env.PROOFDESK_CONFIRM_10_CENT_PAYMENT === "YES";
+  if (!paymentConfirmed) {
     throw new Error(
-      "Set PROOFDESK_CONFIRM_10_CENT_PAYMENT=YES to authorize exactly one $0.10 USDC request.",
+      "Set PROOFDESK_CONFIRM_4_CENT_PAYMENT=YES to authorize exactly one $0.04 USDC request.",
     );
   }
 

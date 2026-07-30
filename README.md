@@ -2,7 +2,7 @@
 
 ProofDesk turns one public HTTPS page into a deterministic, machine-readable
 launch report. The paid endpoint uses the open x402 protocol and costs
-`$0.10 USDC` per completed request.
+`$0.04 USDC` per completed request.
 
 Live public URL for the overnight launch:
 `https://idea-thickness-vpn-criteria.trycloudflare.com`
@@ -41,7 +41,7 @@ curl -X POST \
 The curl command only inspects the payment challenge; it does not settle it.
 For a complete Base purchase, use the checked-in
 [`examples/pay-with-base.mjs`](examples/pay-with-base.mjs) client. It reads the
-wallet key from the environment, requires an explicit 10-cent confirmation,
+wallet key from the environment, requires an explicit 4-cent confirmation,
 and refuses to sign if the price, USDC contract, network, or receiver differs
 from the published ProofDesk offer.
 
@@ -49,14 +49,14 @@ from the published ProofDesk offer.
 $walletKey = Read-Host "Funded Base wallet private key" -AsSecureString
 $env:EVM_PRIVATE_KEY = [System.Net.NetworkCredential]::new("", $walletKey).Password
 try {
-  $env:PROOFDESK_CONFIRM_10_CENT_PAYMENT = "YES"
+  $env:PROOFDESK_CONFIRM_4_CENT_PAYMENT = "YES"
   node examples/pay-with-base.mjs https://example.com
 } finally {
-  Remove-Item Env:EVM_PRIVATE_KEY, Env:PROOFDESK_CONFIRM_10_CENT_PAYMENT
+  Remove-Item Env:EVM_PRIVATE_KEY, Env:PROOFDESK_CONFIRM_4_CENT_PAYMENT
 }
 ```
 
-The wallet must hold at least `$0.10` of native USDC on Base. Never paste the
+The wallet must hold at least `$0.04` of native USDC on Base. Never paste the
 key into the script, issue tracker, command line, or repository.
 
 ## Protocol validation
@@ -102,7 +102,7 @@ accessibility certification.
 
 ## Payment
 
-- price: `$0.10 USDC`
+- price: `$0.04 USDC`
 - Base mainnet receiver:
   `0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F`
 - Solana mainnet receiver:

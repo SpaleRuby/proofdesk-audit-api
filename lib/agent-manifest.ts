@@ -11,7 +11,7 @@ export function createAgentManifest(requestUrl: string) {
     payout_address: BASE_PAYEE,
     display_name: "ProofDesk Launch Audit API",
     description:
-      "Deterministic source-level launch QA for public HTTPS pages, paid per completed JSON report through x402.",
+      "Website and landing-page launch QA for technical SEO, metadata, indexability, page structure, social previews, and a bounded internal-link sample, paid per completed JSON report through x402.",
     payments: {
       x402: {
         networks: [
@@ -36,7 +36,7 @@ export function createAgentManifest(requestUrl: string) {
       {
         name: "audit_launch_page",
         description:
-          "Audit one public HTTPS page for launch metadata, indexability, page structure, social previews, and a bounded same-host link sample. Returns evidence and suggested fixes as JSON.",
+          "Audit one public HTTPS website or landing page before launch for technical SEO, title and description metadata, canonical and social tags, meta robots directives, page structure, and a bounded same-host link sample. Returns evidence and suggested fixes as JSON.",
         endpoint: "/api/audit",
         method: "POST",
         parameters: {
@@ -52,16 +52,16 @@ export function createAgentManifest(requestUrl: string) {
             "A launch-readiness score, pass/warn/fail counts, evidence-backed checks, prioritized issues, and a bounded link sample.",
         },
         price: {
-          amount: 0.1,
+          amount: 0.04,
           currency: "USDC",
           model: "per_call",
           network: ["base", "solana"],
         },
         payments: {
           x402: {
-            direct_price: 0.1,
+            direct_price: 0.04,
             description:
-              "Pay $0.10 USDC per completed audit through x402 on Base or Solana.",
+              "Pay $0.04 USDC per completed audit through x402 on Base or Solana.",
           },
         },
       },

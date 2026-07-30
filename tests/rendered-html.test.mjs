@@ -32,7 +32,7 @@ test("server-renders the ProofDesk landing page", async () => {
   const html = await response.text();
   assert.match(html, /<title>ProofDesk — Launch QA API for agents<\/title>/i);
   assert.match(html, /Catch the embarrassing stuff/);
-  assert.match(html, /Run an audit — \$0\.10/);
+  assert.match(html, /Run an audit — \$0\.04/);
   assert.match(html, /Request an assisted audit/);
   assert.match(html, /Run the Base payment example/);
   assert.match(html, /refuses a changed price or receiver/);
@@ -64,6 +64,7 @@ test("serves health, example and discovery responses", async () => {
   ]);
 
   assert.equal(health.ok, true);
+  assert.equal(health.payment.price, "$0.04");
   assert.deepEqual(health.payment.networks, ["Base", "Solana"]);
   assert.equal(example.score, 82);
   assert.ok(Array.isArray(example.checks));
@@ -81,7 +82,7 @@ test("serves health, example and discovery responses", async () => {
     price: {
       mode: "fixed",
       currency: "USD",
-      amount: "0.100000",
+      amount: "0.040000",
     },
     protocols: [{ x402: {} }],
   });
@@ -90,6 +91,8 @@ test("serves health, example and discovery responses", async () => {
   assert.equal(agent.version, "1.4");
   assert.equal(agent.origin, "proofdesk-audit-api.konstanta-work-x.chatgpt.site");
   assert.equal(agent.intents[0].name, "audit_launch_page");
+  assert.equal(agent.intents[0].price.amount, 0.04);
+  assert.equal(agent.intents[0].payments.x402.direct_price, 0.04);
   assert.deepEqual(agent.intents[0].price.network, ["base", "solana"]);
   assert.deepEqual(
     agent.payments.x402.networks.map((network) => network.network),
@@ -131,7 +134,7 @@ test("returns valid x402 requirements for both payment networks", async () => {
     payment.accepts.map((option) => option.network),
     ["eip155:8453", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"],
   );
-  assert.deepEqual(payment.accepts.map((option) => option.amount), ["100000", "100000"]);
+  assert.deepEqual(payment.accepts.map((option) => option.amount), ["40000", "40000"]);
   assert.equal(
     payment.resource.url,
     "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit",
