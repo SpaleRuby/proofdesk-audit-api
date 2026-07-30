@@ -1,6 +1,6 @@
 {
   "version": "1.4",
-  "origin": "idea-thickness-vpn-criteria.trycloudflare.com",
+  "origin": "proofdesk-audit-api.konstanta-work-x.chatgpt.site",
   "payout_address": "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F",
   "display_name": "ProofDesk Launch Audit API",
   "description": "Launch QA and declared metadata extraction for HTTPS pages on a temporary managed-host allowlist, paid per completed JSON report through x402. Arbitrary custom domains are blocked before fetching.",

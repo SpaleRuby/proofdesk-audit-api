@@ -5,7 +5,9 @@ export const metadata: Metadata = {
   title: "ProofDesk — Launch QA API for agents",
   description:
     "A deterministic launch report for supported managed-hosting pages. Pay $0.04 USDC per request with x402 on Base or Solana.",
-  metadataBase: new URL("https://idea-thickness-vpn-criteria.trycloudflare.com"),
+  metadataBase: new URL(
+    "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site",
+  ),
   openGraph: {
     title: "ProofDesk — Catch launch mistakes before you ship",
     description:

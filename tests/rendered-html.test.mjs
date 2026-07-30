@@ -33,6 +33,14 @@ test("server-renders the ProofDesk landing page", async () => {
   assert.match(html, /<title>ProofDesk — Launch QA API for agents<\/title>/i);
   assert.match(html, /Catch the embarrassing stuff/);
   assert.match(html, /Run an audit — \$0\.04/);
+  assert.match(
+    html,
+    /https:\/\/proofdesk-audit-api\.konstanta-work-x\.chatgpt\.site\/api\/audit/,
+  );
+  assert.doesNotMatch(
+    html,
+    /https:\/\/idea-thickness-vpn-criteria\.trycloudflare\.com/i,
+  );
   assert.match(html, /Declared metadata extraction/i);
   assert.match(html, /\$0\.01 USDC/);
   assert.match(html, /Temporary safety boundary/i);
