@@ -1,4 +1,4 @@
-import { isAuditInputError, runAudit } from "@/lib/audit";
+import { isAuditInputError, runMetadata } from "@/lib/audit";
 import { readUrlRequest } from "@/lib/url-request";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -7,7 +7,7 @@ const responseHeaders = {
   "access-control-allow-origin": "*",
 };
 
-export async function auditHandler(request: NextRequest): Promise<NextResponse> {
+export async function metadataHandler(request: NextRequest): Promise<NextResponse> {
   try {
     const input = await readUrlRequest(request);
     if (!input.ok) {
@@ -17,7 +17,7 @@ export async function auditHandler(request: NextRequest): Promise<NextResponse> 
       );
     }
 
-    const report = await runAudit(input.url);
+    const report = await runMetadata(input.url);
     return NextResponse.json(report, {
       headers: responseHeaders,
     });
@@ -30,8 +30,8 @@ export async function auditHandler(request: NextRequest): Promise<NextResponse> 
     }
 
     const message = error instanceof Error && error.name === "TimeoutError"
-      ? "The page did not respond before the audit timeout"
-      : "The page could not be audited";
+      ? "The page did not respond before the metadata timeout"
+      : "The page metadata could not be extracted";
 
     return NextResponse.json(
       { error: message },

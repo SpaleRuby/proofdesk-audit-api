@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectProofDeskBase } from "../examples/pay-with-base.mjs";
+import {
+  selectProofDeskBase,
+  validateBuyerTarget,
+} from "../examples/pay-with-base.mjs";
 
 const expected = {
   scheme: "exact",
   network: "eip155:8453",
   asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  amount: "100000",
+  amount: "40000",
   payTo: "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F",
   maxTimeoutSeconds: 300,
   extra: {},
@@ -18,7 +21,7 @@ test("Base buyer example selects only the exact advertised payment", () => {
 
 test("Base buyer example refuses price or receiver changes", () => {
   assert.throws(
-    () => selectProofDeskBase(2, [{ ...expected, amount: "100001" }]),
+    () => selectProofDeskBase(2, [{ ...expected, amount: "40001" }]),
     /refusing to sign/,
   );
   assert.throws(
@@ -31,4 +34,23 @@ test("Base buyer example refuses price or receiver changes", () => {
       ]),
     /refusing to sign/,
   );
+});
+
+test("Base buyer example rejects unsupported targets before payment", () => {
+  assert.equal(
+    validateBuyerTarget("https://preview.github.io/launch"),
+    "https://preview.github.io/launch",
+  );
+  for (const target of [
+    "https://custom-domain.example.net/",
+    "https://github.io.attacker.example.net/",
+    "https://preview.github.io:8443/",
+    "http://preview.github.io/",
+  ]) {
+    assert.throws(
+      () => validateBuyerTarget(target),
+      /managed-hosting domain|standard HTTPS/i,
+      target,
+    );
+  }
 });

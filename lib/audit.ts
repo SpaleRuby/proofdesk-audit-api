@@ -1,3 +1,6 @@
+import { parse, type DefaultTreeAdapterTypes } from "parse5";
+import { isSupportedManagedHostname } from "./managed-hosts.ts";
+
 export type CheckStatus = "pass" | "warn" | "fail";
 
 export type AuditCheck = {
@@ -37,6 +40,44 @@ export type AuditReport = {
   disclaimer: string;
 };
 
+export type DeclaredPageMetadata = {
+  title: string | null;
+  description: string | null;
+  canonical: string | null;
+  language: string | null;
+  viewport: string | null;
+  robots: string | null;
+  favicon: string | null;
+  openGraph: {
+    title: string | null;
+    description: string | null;
+    image: string | null;
+    url: string | null;
+    type: string | null;
+    siteName: string | null;
+  };
+  twitter: {
+    card: string | null;
+    title: string | null;
+    description: string | null;
+    image: string | null;
+  };
+};
+
+export type MetadataReport = {
+  metadataId: string;
+  requestedUrl: string;
+  finalUrl: string;
+  fetchedAt: string;
+  elapsedMs: number;
+  httpStatus: number;
+  redirects: string[];
+  metadata: DeclaredPageMetadata;
+  missingFields: string[];
+  source: "server-rendered-html";
+  disclaimer: string;
+};
+
 class AuditInputError extends Error {
   status: number;
 
@@ -65,7 +106,7 @@ const blockedHostSuffixes = [
   ".onion",
 ];
 
-function validatePublicHttpsUrl(raw: string): URL {
+export function validatePublicHttpsUrl(raw: string): URL {
   let url: URL;
 
   try {
@@ -93,6 +134,18 @@ function validatePublicHttpsUrl(raw: string): URL {
     throw new AuditInputError("Only public hostnames are supported");
   }
 
+  if (!isSupportedManagedHostname(host)) {
+    throw new AuditInputError(
+      "For temporary network safety, only documented managed-hosting domains are supported; arbitrary custom domains are not accepted",
+    );
+  }
+
+  if (url.port && url.port !== "443") {
+    throw new AuditInputError(
+      "Only the standard HTTPS port is supported",
+    );
+  }
+
   return url;
 }
 
@@ -106,7 +159,8 @@ async function fetchPage(startUrl: URL) {
       redirect: "manual",
       headers: {
         accept: "text/html,application/xhtml+xml",
-        "user-agent": "ProofDesk-Launch-Audit/1.0 (+https://idea-thickness-vpn-criteria.trycloudflare.com)",
+        "user-agent":
+          "ProofDesk-Launch-Audit/1.0 (+https://proofdesk-audit-api.konstanta-work-x.chatgpt.site)",
       },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
@@ -230,6 +284,156 @@ function absoluteUrl(value: string | undefined, base: URL): URL | undefined {
   } catch {
     return undefined;
   }
+}
+
+const declaredMetaKeys = new Set([
+  "description",
+  "viewport",
+  "robots",
+  "og:title",
+  "og:description",
+  "og:image",
+  "og:url",
+  "og:type",
+  "og:site_name",
+  "twitter:card",
+  "twitter:title",
+  "twitter:description",
+  "twitter:image",
+]);
+
+type ParsedNode = DefaultTreeAdapterTypes.Node;
+type ParsedElement = DefaultTreeAdapterTypes.Element;
+
+function isParsedElement(node: ParsedNode): node is ParsedElement {
+  return "tagName" in node;
+}
+
+function parsedAttributes(element: ParsedElement) {
+  return new Map(
+    element.attrs.map((attribute) => [
+      attribute.name.toLowerCase(),
+      attribute.value,
+    ]),
+  );
+}
+
+function parsedText(node: ParsedNode): string {
+  if (node.nodeName === "#text") return node.value;
+  if (!("childNodes" in node)) return "";
+  return node.childNodes.map(parsedText).join("");
+}
+
+function scanDeclaredMetadata(html: string) {
+  const values = {
+    title: undefined as string | undefined,
+    language: undefined as string | undefined,
+    meta: new Map<string, string | undefined>(),
+    links: new Map<string, string | undefined>(),
+  };
+  const document = parse(html);
+
+  function visit(node: ParsedNode) {
+    if (isParsedElement(node)) {
+      const tagName = node.tagName.toLowerCase();
+      const attributes = parsedAttributes(node);
+
+      if (tagName === "html" && values.language === undefined) {
+        values.language = attributes.get("lang");
+      } else if (tagName === "title" && values.title === undefined) {
+        values.title = parsedText(node);
+      } else if (tagName === "meta") {
+        const keys = [attributes.get("name"), attributes.get("property")]
+          .filter((key): key is string => typeof key === "string")
+          .map((key) => key.toLowerCase());
+
+        for (const key of keys) {
+          if (declaredMetaKeys.has(key) && !values.meta.has(key)) {
+            values.meta.set(key, attributes.get("content"));
+          }
+        }
+      } else if (tagName === "link") {
+        const relTokens = (attributes.get("rel") ?? "")
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        for (const rel of ["canonical", "icon", "shortcut"]) {
+          if (relTokens.includes(rel) && !values.links.has(rel)) {
+            values.links.set(rel, attributes.get("href"));
+          }
+        }
+      }
+
+      // Metadata inside a template is inert until client code instantiates it.
+      if (tagName === "template") return;
+    }
+
+    if ("childNodes" in node) {
+      for (const child of node.childNodes) visit(child);
+    }
+  }
+
+  visit(document);
+  return values;
+}
+
+function declaredValue(value: string | undefined) {
+  return value?.replace(/\s+/g, " ").trim() || null;
+}
+
+export function extractDeclaredMetadata(html: string): DeclaredPageMetadata {
+  const declared = scanDeclaredMetadata(html);
+  const meta = (key: string) => declaredValue(declared.meta.get(key));
+  const link = (rel: string) => declaredValue(declared.links.get(rel));
+
+  return {
+    title: declaredValue(declared.title),
+    description: meta("description"),
+    canonical: link("canonical"),
+    language: declaredValue(declared.language),
+    viewport: meta("viewport"),
+    robots: meta("robots"),
+    favicon: link("icon") ?? link("shortcut"),
+    openGraph: {
+      title: meta("og:title"),
+      description: meta("og:description"),
+      image: meta("og:image"),
+      url: meta("og:url"),
+      type: meta("og:type"),
+      siteName: meta("og:site_name"),
+    },
+    twitter: {
+      card: meta("twitter:card"),
+      title: meta("twitter:title"),
+      description: meta("twitter:description"),
+      image: meta("twitter:image"),
+    },
+  };
+}
+
+function getMissingMetadataFields(metadata: DeclaredPageMetadata) {
+  const fields: Array<[string, string | null]> = [
+    ["title", metadata.title],
+    ["description", metadata.description],
+    ["canonical", metadata.canonical],
+    ["language", metadata.language],
+    ["viewport", metadata.viewport],
+    ["robots", metadata.robots],
+    ["favicon", metadata.favicon],
+    ["openGraph.title", metadata.openGraph.title],
+    ["openGraph.description", metadata.openGraph.description],
+    ["openGraph.image", metadata.openGraph.image],
+    ["openGraph.url", metadata.openGraph.url],
+    ["openGraph.type", metadata.openGraph.type],
+    ["openGraph.siteName", metadata.openGraph.siteName],
+    ["twitter.card", metadata.twitter.card],
+    ["twitter.title", metadata.twitter.title],
+    ["twitter.description", metadata.twitter.description],
+    ["twitter.image", metadata.twitter.image],
+  ];
+
+  return fields.filter(([, value]) => value === null).map(([field]) => field);
 }
 
 function addCheck(
@@ -470,9 +674,11 @@ function collectSameHostLinks(html: string, pageUrl: URL): URL[] {
     if (!href || href.startsWith("#") || /^(mailto:|tel:|javascript:|data:)/i.test(href)) continue;
 
     try {
-      const candidate = new URL(href, pageUrl);
+      const candidate = validatePublicHttpsUrl(
+        new URL(href, pageUrl).toString(),
+      );
       candidate.hash = "";
-      if (candidate.protocol !== "https:" || candidate.hostname !== pageUrl.hostname) continue;
+      if (candidate.hostname !== pageUrl.hostname) continue;
       const key = candidate.toString();
       if (key === pageUrl.toString() || seen.has(key)) continue;
       seen.add(key);
@@ -528,6 +734,28 @@ function scoreChecks(checks: AuditCheck[]): number {
 
 export function isAuditInputError(error: unknown): error is AuditInputError {
   return error instanceof AuditInputError;
+}
+
+export async function runMetadata(rawUrl: string): Promise<MetadataReport> {
+  const started = Date.now();
+  const requested = validatePublicHttpsUrl(rawUrl);
+  const { response, html, finalUrl, redirects } = await fetchPage(requested);
+  const metadata = extractDeclaredMetadata(html);
+
+  return {
+    metadataId: `pdm_${crypto.randomUUID()}`,
+    requestedUrl: requested.toString(),
+    finalUrl: finalUrl.toString(),
+    fetchedAt: new Date().toISOString(),
+    elapsedMs: Date.now() - started,
+    httpStatus: response.status,
+    redirects,
+    metadata,
+    missingFields: getMissingMetadataFields(metadata),
+    source: "server-rendered-html",
+    disclaimer:
+      "Declared values from the fetched HTML source only; JavaScript rendering and social-platform preview behavior are not evaluated.",
+  };
 }
 
 export async function runAudit(rawUrl: string): Promise<AuditReport> {

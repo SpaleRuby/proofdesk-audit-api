@@ -16,41 +16,40 @@ import {
   SUPPORTED_MANAGED_HOSTS,
 } from "../../../lib/managed-hosts";
 import { rejectInvalidPageRequest } from "../../../lib/page-request-preflight";
-import { auditHandler } from "./handler";
+import { metadataHandler } from "./handler";
 
 export const runtime = "edge";
 
 const BASE_MAINNET = "eip155:8453";
 const SOLANA_MAINNET = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
-const auditRoute: RouteConfig = {
+const metadataRoute: RouteConfig = {
   accepts: [
     {
       scheme: "exact",
-      price: "$0.04",
+      price: "$0.01",
       network: BASE_MAINNET,
       payTo: "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F",
     },
     {
       scheme: "exact",
-      price: "$0.04",
+      price: "$0.01",
       network: SOLANA_MAINNET,
       payTo: "BeNzbeMCKUkgAysej51HpjPDPg57wJYQmUvxC2EQsnXc",
     },
   ],
   description:
-    `Audit a page on a supported managed-hosting domain before launch for technical SEO, metadata, page structure, and a bounded same-host link sample. ${MANAGED_HOST_POLICY_SUMMARY}`,
+    `Extract declared SEO and social-preview metadata from a page on a supported managed-hosting domain. ${MANAGED_HOST_POLICY_SUMMARY}`,
   mimeType: "application/json",
   serviceName: "ProofDesk",
   tags: [
     "website",
-    "landing-page",
-    "launch-readiness",
-    "technical-seo",
     "metadata",
-    "meta-robots",
-    "internal-links",
+    "technical-seo",
+    "social-preview",
     "open-graph",
+    "twitter-card",
+    "canonical",
   ],
   extensions: declareDiscoveryExtension({
     bodyType: "json",
@@ -72,60 +71,74 @@ const auditRoute: RouteConfig = {
     },
     output: {
       example: {
-        auditId: "pd_example",
+        metadataId: "pdm_example",
         requestedUrl: "https://example.com/",
         finalUrl: "https://example.com/",
-        score: 82,
-        summary: { pass: 13, warn: 3, fail: 1 },
-        issues: [
-          {
-            severity: "warn",
-            check: "social-image",
-            evidence: "og:image is missing",
-            fix: "Add an absolute HTTPS og:image URL, ideally 1200×630.",
+        fetchedAt: "2026-07-30T00:00:00.000Z",
+        elapsedMs: 120,
+        httpStatus: 200,
+        redirects: [],
+        metadata: {
+          title: "Example Domain",
+          description: "A public example page.",
+          canonical: "https://example.com/",
+          language: "en",
+          viewport: "width=device-width, initial-scale=1",
+          robots: null,
+          favicon: "/favicon.ico",
+          openGraph: {
+            title: "Example Domain",
+            description: "A public example page.",
+            image: "/preview.png",
+            url: "https://example.com/",
+            type: "website",
+            siteName: null,
           },
-        ],
-        checks: [
-          {
-            check: "http-status",
-            label: "HTTP status",
-            status: "pass",
-            evidence: "Final response returned HTTP 200",
+          twitter: {
+            card: "summary_large_image",
+            title: null,
+            description: null,
+            image: null,
           },
+        },
+        missingFields: [
+          "robots",
+          "openGraph.siteName",
+          "twitter.title",
+          "twitter.description",
+          "twitter.image",
         ],
+        source: "server-rendered-html",
+        disclaimer:
+          "Declared values from the fetched HTML source only; JavaScript rendering and social-platform preview behavior are not evaluated.",
       },
       schema: {
         type: "object",
         properties: {
-          auditId: { type: "string" },
+          metadataId: { type: "string" },
           requestedUrl: { type: "string" },
           finalUrl: { type: "string" },
-          score: { type: "integer" },
-          summary: {
-            type: "object",
-            properties: {
-              pass: { type: "integer" },
-              warn: { type: "integer" },
-              fail: { type: "integer" },
-            },
-          },
-          issues: {
-            type: "array",
-            items: { type: "object" },
-          },
-          checks: {
-            type: "array",
-            items: { type: "object" },
-          },
+          fetchedAt: { type: "string" },
+          elapsedMs: { type: "integer" },
+          httpStatus: { type: "integer" },
+          redirects: { type: "array", items: { type: "string" } },
+          metadata: { type: "object" },
+          missingFields: { type: "array", items: { type: "string" } },
+          source: { type: "string", enum: ["server-rendered-html"] },
+          disclaimer: { type: "string" },
         },
         required: [
-          "auditId",
+          "metadataId",
           "requestedUrl",
           "finalUrl",
-          "score",
-          "summary",
-          "issues",
-          "checks",
+          "fetchedAt",
+          "elapsedMs",
+          "httpStatus",
+          "redirects",
+          "metadata",
+          "missingFields",
+          "source",
+          "disclaimer",
         ],
       },
     },
@@ -139,11 +152,11 @@ const resourceServer = new x402ResourceServer(
   .register(SOLANA_MAINNET, new ExactSvmScheme());
 
 const httpServer = new x402HTTPResourceServer(resourceServer, {
-  "POST /api/audit": auditRoute,
+  "POST /api/metadata": metadataRoute,
 });
 
 const protectedPost = withX402FromHTTPServer(
-  (request: NextRequest) => auditHandler(request),
+  (request: NextRequest) => metadataHandler(request),
   httpServer,
   undefined,
   undefined,

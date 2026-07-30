@@ -1,15 +1,53 @@
 import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const API_BASE =
   process.env.PROOFDESK_API_URL ??
-  "https://idea-thickness-vpn-criteria.trycloudflare.com";
+  "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site";
 const NETWORK = "eip155:8453";
 const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const PAYEE = "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F";
-const AMOUNT = "100000";
+const AMOUNT = "40000";
+const agentManifest = JSON.parse(
+  readFileSync(
+    new URL("../public/.well-known/agent.json", import.meta.url),
+    "utf8",
+  ),
+);
+const SUPPORTED_MANAGED_HOSTS =
+  agentManifest.extensions.proofdesk.input_policy.supported_managed_hosts;
+
+export function validateBuyerTarget(input) {
+  let url;
+  try {
+    url = new URL(input);
+  } catch {
+    throw new Error("Target must be a valid absolute URL.");
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  const supported = SUPPORTED_MANAGED_HOSTS.some(
+    (managedHost) =>
+      hostname === managedHost || hostname.endsWith(`.${managedHost}`),
+  );
+
+  if (
+    url.protocol !== "https:"
+    || url.username
+    || url.password
+    || (url.port && url.port !== "443")
+    || !supported
+  ) {
+    throw new Error(
+      "Target must use standard HTTPS on a managed-hosting domain listed in public/.well-known/agent.json; arbitrary custom domains are not supported.",
+    );
+  }
+
+  return url.href;
+}
 
 export function selectProofDeskBase(_version, options) {
   const exact = options.find(
@@ -34,23 +72,27 @@ function requireInput() {
   const targetUrl = process.argv[2];
   const privateKey = process.env.EVM_PRIVATE_KEY;
 
-  if (!targetUrl || !/^https:\/\//i.test(targetUrl)) {
+  if (!targetUrl) {
     throw new Error(
-      "Pass one public HTTPS page: node examples/pay-with-base.mjs https://example.com",
+      "Pass one allowlisted managed-hosting page: node examples/pay-with-base.mjs https://example.com",
     );
   }
+  const validatedTargetUrl = validateBuyerTarget(targetUrl);
   if (!privateKey || !/^0x[0-9a-f]{64}$/i.test(privateKey)) {
     throw new Error(
       "Set EVM_PRIVATE_KEY to a funded Base wallet key. Never paste or commit it.",
     );
   }
-  if (process.env.PROOFDESK_CONFIRM_10_CENT_PAYMENT !== "YES") {
+  const paymentConfirmed =
+    process.env.PROOFDESK_CONFIRM_4_CENT_PAYMENT === "YES" ||
+    process.env.PROOFDESK_CONFIRM_10_CENT_PAYMENT === "YES";
+  if (!paymentConfirmed) {
     throw new Error(
-      "Set PROOFDESK_CONFIRM_10_CENT_PAYMENT=YES to authorize exactly one $0.10 USDC request.",
+      "Set PROOFDESK_CONFIRM_4_CENT_PAYMENT=YES to authorize exactly one $0.04 USDC request.",
     );
   }
 
-  return { targetUrl, privateKey };
+  return { targetUrl: validatedTargetUrl, privateKey };
 }
 
 async function main() {

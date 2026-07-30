@@ -1,15 +1,15 @@
 # ProofDesk Launch Audit API
 
-ProofDesk turns one public HTTPS page into a deterministic, machine-readable
-launch report. The paid endpoint uses the open x402 protocol and costs
-`$0.10 USDC` per completed request.
+ProofDesk turns one HTTPS page on a supported managed-hosting domain into
+either a deterministic, machine-readable launch report for `$0.04 USDC` or a
+declared metadata response for `$0.01 USDC`. Both paid endpoints use the open
+x402 protocol.
 
-Live public URL for the overnight launch:
-`https://idea-thickness-vpn-criteria.trycloudflare.com`
+Stable production URL:
+`https://proofdesk-audit-api.konstanta-work-x.chatgpt.site`
 
-This is an official Cloudflare Quick Tunnel and is intentionally treated as a
-temporary launch endpoint. It has no uptime SLA and changes if the tunnel is
-restarted.
+The four advertised resources are also independently discoverable on
+[x402scan](https://www.x402scan.com/server/426be034-f5a8-4054-828f-da023d3730ea).
 
 ## Endpoints
 
@@ -19,8 +19,10 @@ restarted.
 - `GET /llms.txt` — compact agent-facing instructions
 - `GET /.well-known/agent.json` — agent.json 1.4 capability and payment manifest
 - `POST /api/audit` — paid launch audit
+- `POST /api/metadata` — paid declared metadata extraction
+- `POST /api/marketplace/audit` — private PayanAgent proxy fulfillment route
 
-The paid route accepts:
+The paid routes accept:
 
 ```json
 {
@@ -31,50 +33,108 @@ The paid route accepts:
 A plain request receives HTTP `402` and standard x402 payment requirements.
 An x402-aware client can settle and retry automatically.
 
+### Temporary managed-host safety boundary
+
+Buyer-controlled fetches currently accept only the exact provider-owned apex
+domains below or their subdomains:
+
+`github.io`, `pages.dev`, `vercel.app`, `netlify.app`, `webflow.io`,
+`framer.website`, `onrender.com`, `railway.app`, `surge.sh`,
+`firebaseapp.com`, `web.app`, `readthedocs.io`, `gitbook.io`,
+`wordpress.com`, `myshopify.com`, `wixsite.com`, `carrd.co`,
+`typedream.app`, `trycloudflare.com`, `chatgpt.site`, and the reserved
+`example.com` example domain.
+
+Arbitrary custom domains are rejected with HTTP `400` before the page is
+fetched. Every redirect and same-host link probe is checked against the same
+allowlist, and only standard HTTPS port 443 is accepted. This is a temporary
+fail-closed containment policy until page fetching runs in a separately
+isolated egress environment.
+
 ```bash
 curl -X POST \
-  "https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit" \
+  "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit" \
   -H "content-type: application/json" \
   -d '{"url":"https://example.com"}'
 ```
 
-The curl command only inspects the payment challenge; it does not settle it.
+For declared metadata only, use the lighter endpoint:
+
+```bash
+curl -X POST \
+  "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/metadata" \
+  -H "content-type: application/json" \
+  -d '{"url":"https://example.com"}'
+```
+
+It returns the title, description, canonical, language, viewport, meta robots,
+favicon, Open Graph, and Twitter Card values declared in the fetched HTML.
+Missing declarations are returned as `null` and listed in `missingFields`.
+It does not render JavaScript, fetch linked assets, probe links, or emulate a
+social-platform preview.
+
+These curl commands only inspect payment challenges; they do not settle them.
 For a complete Base purchase, use the checked-in
 [`examples/pay-with-base.mjs`](examples/pay-with-base.mjs) client. It reads the
-wallet key from the environment, requires an explicit 10-cent confirmation,
-and refuses to sign if the price, USDC contract, network, or receiver differs
-from the published ProofDesk offer.
+wallet key from the environment, requires an explicit 4-cent confirmation,
+rejects non-allowlisted targets before payment, and refuses to sign if the
+price, USDC contract, network, or receiver differs from the published
+ProofDesk offer.
 
 ```powershell
 $walletKey = Read-Host "Funded Base wallet private key" -AsSecureString
 $env:EVM_PRIVATE_KEY = [System.Net.NetworkCredential]::new("", $walletKey).Password
 try {
-  $env:PROOFDESK_CONFIRM_10_CENT_PAYMENT = "YES"
+  $env:PROOFDESK_CONFIRM_4_CENT_PAYMENT = "YES"
   node examples/pay-with-base.mjs https://example.com
 } finally {
-  Remove-Item Env:EVM_PRIVATE_KEY, Env:PROOFDESK_CONFIRM_10_CENT_PAYMENT
+  Remove-Item Env:EVM_PRIVATE_KEY, Env:PROOFDESK_CONFIRM_4_CENT_PAYMENT
 }
 ```
 
-The wallet must hold at least `$0.10` of native USDC on Base. Never paste the
+The wallet must hold at least `$0.04` of native USDC on Base. Never paste the
 key into the script, issue tracker, command line, or repository.
 
-## Protocol validation
+### PayanAgent marketplace proxy
 
-On 2026-07-30, Coinbase's unauthenticated, read-only
-[x402 endpoint validator](https://docs.cdp.coinbase.com/x402/validate-endpoint)
-returned `valid: true` for the live `POST /api/audit` route: HTTP 402, x402 v2,
-the payment-required header, and the Bazaar input/output metadata all passed,
-with simulation outcome `accepted`. This proves discovery readiness; it does
-not claim that the temporary tunnel URL is indexed in CDP Bazaar.
+`POST /api/marketplace/audit?token=...` is reserved for server-to-server
+fulfillment through a configured PayanAgent native offer. It runs the same
+bounded audit as `/api/audit`, but it does not invoke x402 because marketplace
+payment is handled outside this route. It is not a public, free alternative to
+the paid endpoint.
 
-You can repeat the no-payment check with:
+Set `PAYANAGENT_PROXY_TOKEN` in the deployment environment and configure the
+same token only in the private PayanAgent offer endpoint URL. The checked-in
+`.env.example` intentionally leaves it blank. Requests with an absent,
+incorrect, or unconfigured token all receive the same `404 Not Found`
+response. Query-string credentials can appear in proxy access logs, so rotate
+the token if the configured endpoint URL is ever exposed.
+
+Each running service instance admits at most 12 authorized marketplace calls
+per rolling 60 seconds and runs at most two audits concurrently. Excess calls
+receive a non-cacheable `429` response with `Retry-After`.
+
+## Protocol discovery
+
+On 2026-07-30, x402scan independently loaded the OpenAPI document, constructed
+the documented `{"url":"https://example.com"}` request, verified both paid
+routes as x402 v2 resources on Base and Solana, and registered all four
+advertised resources with zero failures. The public catalog card is linked
+above.
+
+You can repeat the no-payment challenge check directly:
 
 ```bash
-curl -X POST https://api.cdp.coinbase.com/platform/v2/x402/validate \
+curl -i -X POST \
+  https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit \
   -H "content-type: application/json" \
-  -d '{"resource":"https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit","method":"POST"}'
+  -d '{"url":"https://example.com"}'
 ```
+
+This returns HTTP `402` and the payment requirements without settling them.
+Generic validators that send a bodyless POST receive HTTP `400` because
+ProofDesk deliberately rejects malformed input before presenting a payment
+challenge.
 
 ## Assisted audit — $10
 
@@ -102,7 +162,8 @@ accessibility certification.
 
 ## Payment
 
-- price: `$0.10 USDC`
+- full launch audit: `$0.04 USDC`
+- declared metadata extraction: `$0.01 USDC`
 - Base mainnet receiver:
   `0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F`
 - Solana mainnet receiver:
@@ -121,6 +182,8 @@ npm run build
 npm test
 ```
 
-The audit accepts only public HTTPS hostnames, follows at most three validated
-redirects, caps HTML input at 1.25 MB, samples at most six same-host links, and
-uses bounded request timeouts.
+Both public paid routes accept only the managed-hosting apex domains and
+subdomains listed above, follow at most three allowlist-validated redirects,
+cap HTML input at 1.25 MB, and use bounded request timeouts. The full audit
+samples at most six allowlist-validated same-host links; metadata extraction
+performs no link or asset probes.
