@@ -58,6 +58,38 @@
       }
     },
     {
+      "name": "extract_page_metadata",
+      "description": "Extract the title, description, canonical, language, viewport, meta robots, favicon, Open Graph, and Twitter Card values declared in the fetched HTML source of one public HTTPS page. Missing declarations are explicit; no JavaScript rendering, asset fetching, link probing, or platform-preview emulation.",
+      "endpoint": "/api/metadata",
+      "method": "POST",
+      "parameters": {
+        "url": {
+          "type": "string",
+          "required": true,
+          "description": "The public HTTPS page whose declared metadata should be extracted."
+        }
+      },
+      "returns": {
+        "type": "object",
+        "description": "Raw declared metadata values, explicit missing fields, HTTP status, redirects, and the final URL."
+      },
+      "price": {
+        "amount": 0.01,
+        "currency": "USDC",
+        "model": "per_call",
+        "network": [
+          "base",
+          "solana"
+        ]
+      },
+      "payments": {
+        "x402": {
+          "direct_price": 0.01,
+          "description": "Pay $0.01 USDC per metadata extraction through x402 on Base or Solana."
+        }
+      }
+    },
+    {
       "name": "get_example_audit",
       "description": "Inspect a representative ProofDesk audit response without payment.",
       "endpoint": "/api/example",

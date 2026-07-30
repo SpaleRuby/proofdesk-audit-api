@@ -37,6 +37,44 @@ export type AuditReport = {
   disclaimer: string;
 };
 
+export type DeclaredPageMetadata = {
+  title: string | null;
+  description: string | null;
+  canonical: string | null;
+  language: string | null;
+  viewport: string | null;
+  robots: string | null;
+  favicon: string | null;
+  openGraph: {
+    title: string | null;
+    description: string | null;
+    image: string | null;
+    url: string | null;
+    type: string | null;
+    siteName: string | null;
+  };
+  twitter: {
+    card: string | null;
+    title: string | null;
+    description: string | null;
+    image: string | null;
+  };
+};
+
+export type MetadataReport = {
+  metadataId: string;
+  requestedUrl: string;
+  finalUrl: string;
+  fetchedAt: string;
+  elapsedMs: number;
+  httpStatus: number;
+  redirects: string[];
+  metadata: DeclaredPageMetadata;
+  missingFields: string[];
+  source: "server-rendered-html";
+  disclaimer: string;
+};
+
 class AuditInputError extends Error {
   status: number;
 
@@ -230,6 +268,63 @@ function absoluteUrl(value: string | undefined, base: URL): URL | undefined {
   } catch {
     return undefined;
   }
+}
+
+function declaredValue(value: string | undefined) {
+  return value?.trim() || null;
+}
+
+export function extractDeclaredMetadata(html: string): DeclaredPageMetadata {
+  const titleMatch = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  const htmlTag = html.match(/<html\b[^>]*>/i)?.[0] ?? "";
+
+  return {
+    title: titleMatch ? declaredValue(stripTags(titleMatch[1])) : null,
+    description: declaredValue(findMeta(html, "description")),
+    canonical: declaredValue(findLink(html, "canonical")),
+    language: declaredValue(parseAttributes(htmlTag).lang),
+    viewport: declaredValue(findMeta(html, "viewport")),
+    robots: declaredValue(findMeta(html, "robots")),
+    favicon: declaredValue(findLink(html, "icon") ?? findLink(html, "shortcut")),
+    openGraph: {
+      title: declaredValue(findMeta(html, "og:title")),
+      description: declaredValue(findMeta(html, "og:description")),
+      image: declaredValue(findMeta(html, "og:image")),
+      url: declaredValue(findMeta(html, "og:url")),
+      type: declaredValue(findMeta(html, "og:type")),
+      siteName: declaredValue(findMeta(html, "og:site_name")),
+    },
+    twitter: {
+      card: declaredValue(findMeta(html, "twitter:card")),
+      title: declaredValue(findMeta(html, "twitter:title")),
+      description: declaredValue(findMeta(html, "twitter:description")),
+      image: declaredValue(findMeta(html, "twitter:image")),
+    },
+  };
+}
+
+function getMissingMetadataFields(metadata: DeclaredPageMetadata) {
+  const fields: Array<[string, string | null]> = [
+    ["title", metadata.title],
+    ["description", metadata.description],
+    ["canonical", metadata.canonical],
+    ["language", metadata.language],
+    ["viewport", metadata.viewport],
+    ["robots", metadata.robots],
+    ["favicon", metadata.favicon],
+    ["openGraph.title", metadata.openGraph.title],
+    ["openGraph.description", metadata.openGraph.description],
+    ["openGraph.image", metadata.openGraph.image],
+    ["openGraph.url", metadata.openGraph.url],
+    ["openGraph.type", metadata.openGraph.type],
+    ["openGraph.siteName", metadata.openGraph.siteName],
+    ["twitter.card", metadata.twitter.card],
+    ["twitter.title", metadata.twitter.title],
+    ["twitter.description", metadata.twitter.description],
+    ["twitter.image", metadata.twitter.image],
+  ];
+
+  return fields.filter(([, value]) => value === null).map(([field]) => field);
 }
 
 function addCheck(
@@ -528,6 +623,28 @@ function scoreChecks(checks: AuditCheck[]): number {
 
 export function isAuditInputError(error: unknown): error is AuditInputError {
   return error instanceof AuditInputError;
+}
+
+export async function runMetadata(rawUrl: string): Promise<MetadataReport> {
+  const started = Date.now();
+  const requested = validatePublicHttpsUrl(rawUrl);
+  const { response, html, finalUrl, redirects } = await fetchPage(requested);
+  const metadata = extractDeclaredMetadata(html);
+
+  return {
+    metadataId: `pdm_${crypto.randomUUID()}`,
+    requestedUrl: requested.toString(),
+    finalUrl: finalUrl.toString(),
+    fetchedAt: new Date().toISOString(),
+    elapsedMs: Date.now() - started,
+    httpStatus: response.status,
+    redirects,
+    metadata,
+    missingFields: getMissingMetadataFields(metadata),
+    source: "server-rendered-html",
+    disclaimer:
+      "Declared values from the fetched HTML source only; JavaScript rendering and social-platform preview behavior are not evaluated.",
+  };
 }
 
 export async function runAudit(rawUrl: string): Promise<AuditReport> {

@@ -11,6 +11,10 @@ export async function GET() {
         price: "$0.04",
         asset: "USDC",
         networks: ["Base", "Solana"],
+        routes: {
+          "/api/audit": "$0.04",
+          "/api/metadata": "$0.01",
+        },
       },
     },
     {

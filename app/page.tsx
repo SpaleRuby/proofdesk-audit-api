@@ -223,6 +223,11 @@ export default function Home() {
               Send any public HTTPS page. Payment is requested automatically through
               the open x402 protocol.
             </p>
+            <p className="cta-copy">
+              Declared metadata extraction is also available at $0.01 USDC through
+              POST /api/metadata. It reads server-returned HTML only, without
+              JavaScript rendering or link and asset probes.
+            </p>
           </div>
           <div className="curl-box">
             <div><span>POST /api/audit</span><span>$0.04 USDC</span></div>

@@ -33,6 +33,8 @@ test("server-renders the ProofDesk landing page", async () => {
   assert.match(html, /<title>ProofDesk — Launch QA API for agents<\/title>/i);
   assert.match(html, /Catch the embarrassing stuff/);
   assert.match(html, /Run an audit — \$0\.04/);
+  assert.match(html, /Declared metadata extraction/i);
+  assert.match(html, /\$0\.01 USDC/);
   assert.match(html, /Request an assisted audit/);
   assert.match(html, /Run the Base payment example/);
   assert.match(html, /refuses a changed price or receiver/);
@@ -65,6 +67,10 @@ test("serves health, example and discovery responses", async () => {
 
   assert.equal(health.ok, true);
   assert.equal(health.payment.price, "$0.04");
+  assert.deepEqual(health.payment.routes, {
+    "/api/audit": "$0.04",
+    "/api/metadata": "$0.01",
+  });
   assert.deepEqual(health.payment.networks, ["Base", "Solana"]);
   assert.equal(example.score, 82);
   assert.ok(Array.isArray(example.checks));
@@ -87,7 +93,20 @@ test("serves health, example and discovery responses", async () => {
     protocols: [{ x402: {} }],
   });
   assert.equal(paidOperation.responses["402"].description, "Payment Required");
-  assert.match(await llmsResponse.text(), /ProofDesk Launch Audit API/);
+  const metadataOperation = openapi.paths["/api/metadata"].post;
+  assert.ok(metadataOperation);
+  assert.equal(
+    metadataOperation["x-payment-info"].price.amount,
+    "0.010000",
+  );
+  assert.equal(
+    metadataOperation.responses["402"].description,
+    "Payment Required",
+  );
+  const llms = await llmsResponse.text();
+  assert.match(llms, /ProofDesk Launch Audit API/);
+  assert.match(llms, /Declared metadata extraction — \$0\.01 USDC/);
+  assert.match(llms, /does not render JavaScript.*probe links/i);
   assert.equal(agent.version, "1.4");
   assert.equal(agent.origin, "proofdesk-audit-api.konstanta-work-x.chatgpt.site");
   assert.equal(agent.intents[0].name, "audit_launch_page");
@@ -98,6 +117,13 @@ test("serves health, example and discovery responses", async () => {
     agent.payments.x402.networks.map((network) => network.network),
     ["base", "solana"],
   );
+  const metadataIntent = agent.intents.find(
+    (intent) => intent.name === "extract_page_metadata",
+  );
+  assert.ok(metadataIntent);
+  assert.equal(metadataIntent.endpoint, "/api/metadata");
+  assert.equal(metadataIntent.price.amount, 0.01);
+  assert.equal(metadataIntent.payments.x402.direct_price, 0.01);
 });
 
 test("uses the forwarded HTTPS protocol for proxy discovery", async () => {
@@ -138,6 +164,33 @@ test("returns valid x402 requirements for both payment networks", async () => {
   assert.equal(
     payment.resource.url,
     "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit",
+  );
+  assert.equal(payment.extensions.bazaar.info.input.method, "POST");
+});
+
+test("returns exact metadata x402 requirements for both payment networks", async () => {
+  const response = await request("/api/metadata?source=regression", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ url: "https://example.com" }),
+  });
+
+  assert.equal(response.status, 402);
+  const encoded = response.headers.get("payment-required");
+  assert.ok(encoded, "PAYMENT-REQUIRED header must be present");
+
+  const payment = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
+  assert.deepEqual(
+    payment.accepts.map((option) => option.network),
+    ["eip155:8453", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"],
+  );
+  assert.deepEqual(payment.accepts.map((option) => option.amount), ["10000", "10000"]);
+  assert.equal(
+    payment.resource.url,
+    "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/metadata",
   );
   assert.equal(payment.extensions.bazaar.info.input.method, "POST");
 });
