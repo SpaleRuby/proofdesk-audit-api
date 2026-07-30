@@ -43,4 +43,5 @@ next-env.d.ts
 /work/
 /.dev/
 /public/products/
+/public/private-download-*
 *.tsbuildinfo
