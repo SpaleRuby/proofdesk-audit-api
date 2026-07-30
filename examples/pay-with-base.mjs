@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 
 const API_BASE =
   process.env.PROOFDESK_API_URL ??
-  "https://idea-thickness-vpn-criteria.trycloudflare.com";
+  "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site";
 const NETWORK = "eip155:8453";
 const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const PAYEE = "0x36D130BEed8E68Bbd74225F1f56a381BB5B3C23F";

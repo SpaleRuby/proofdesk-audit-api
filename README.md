@@ -5,12 +5,11 @@ either a deterministic, machine-readable launch report for `$0.04 USDC` or a
 declared metadata response for `$0.01 USDC`. Both paid endpoints use the open
 x402 protocol.
 
-Live public URL for the overnight launch:
-`https://idea-thickness-vpn-criteria.trycloudflare.com`
+Stable production URL:
+`https://proofdesk-audit-api.konstanta-work-x.chatgpt.site`
 
-This is an official Cloudflare Quick Tunnel and is intentionally treated as a
-temporary launch endpoint. It has no uptime SLA and changes if the tunnel is
-restarted.
+The four advertised resources are also independently discoverable on
+[x402scan](https://www.x402scan.com/server/426be034-f5a8-4054-828f-da023d3730ea).
 
 ## Endpoints
 
@@ -54,7 +53,7 @@ isolated egress environment.
 
 ```bash
 curl -X POST \
-  "https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit" \
+  "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit" \
   -H "content-type: application/json" \
   -d '{"url":"https://example.com"}'
 ```
@@ -63,7 +62,7 @@ For declared metadata only, use the lighter endpoint:
 
 ```bash
 curl -X POST \
-  "https://idea-thickness-vpn-criteria.trycloudflare.com/api/metadata" \
+  "https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/metadata" \
   -H "content-type: application/json" \
   -d '{"url":"https://example.com"}'
 ```
@@ -115,22 +114,27 @@ Each running service instance admits at most 12 authorized marketplace calls
 per rolling 60 seconds and runs at most two audits concurrently. Excess calls
 receive a non-cacheable `429` response with `Retry-After`.
 
-## Protocol validation
+## Protocol discovery
 
-On 2026-07-30, Coinbase's unauthenticated, read-only
-[x402 endpoint validator](https://docs.cdp.coinbase.com/x402/validate-endpoint)
-returned `valid: true` for the live `POST /api/audit` route: HTTP 402, x402 v2,
-the payment-required header, and the Bazaar input/output metadata all passed,
-with simulation outcome `accepted`. This proves discovery readiness; it does
-not claim that the temporary tunnel URL is indexed in CDP Bazaar.
+On 2026-07-30, x402scan independently loaded the OpenAPI document, constructed
+the documented `{"url":"https://example.com"}` request, verified both paid
+routes as x402 v2 resources on Base and Solana, and registered all four
+advertised resources with zero failures. The public catalog card is linked
+above.
 
-You can repeat the no-payment check with:
+You can repeat the no-payment challenge check directly:
 
 ```bash
-curl -X POST https://api.cdp.coinbase.com/platform/v2/x402/validate \
+curl -i -X POST \
+  https://proofdesk-audit-api.konstanta-work-x.chatgpt.site/api/audit \
   -H "content-type: application/json" \
-  -d '{"resource":"https://idea-thickness-vpn-criteria.trycloudflare.com/api/audit","method":"POST"}'
+  -d '{"url":"https://example.com"}'
 ```
+
+This returns HTTP `402` and the payment requirements without settling them.
+Generic validators that send a bodyless POST receive HTTP `400` because
+ProofDesk deliberately rejects malformed input before presenting a payment
+challenge.
 
 ## Assisted audit — $10
 
