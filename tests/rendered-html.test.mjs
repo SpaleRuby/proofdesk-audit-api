@@ -59,7 +59,18 @@ test("serves health, example and OpenAPI responses", async () => {
   assert.equal(example.score, 82);
   assert.ok(Array.isArray(example.checks));
   assert.equal(openapi.openapi, "3.1.0");
-  assert.ok(openapi.paths["/api/audit"].post);
+  assert.match(openapi.info["x-guidance"], /POST \/api\/audit/);
+  const paidOperation = openapi.paths["/api/audit"].post;
+  assert.ok(paidOperation);
+  assert.deepEqual(paidOperation["x-payment-info"], {
+    price: {
+      mode: "fixed",
+      currency: "USD",
+      amount: "0.100000",
+    },
+    protocols: [{ x402: {} }],
+  });
+  assert.equal(paidOperation.responses["402"].description, "Payment Required");
   assert.match(await llmsResponse.text(), /ProofDesk Launch Audit API/);
 });
 
