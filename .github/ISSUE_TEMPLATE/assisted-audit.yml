@@ -1,0 +1,51 @@
+name: Assisted launch audit ($10)
+description: Request a fixed-price, AI-assisted launch report and prioritized action plan.
+title: "[Assisted audit] "
+labels:
+  - assisted-audit
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a $10 fixed-price review for one public HTTPS page. Please do not send payment yet. Scope, availability, payment network, and delivery estimate are confirmed in the issue first.
+
+  - type: input
+    id: url
+    attributes:
+      label: Public page URL
+      description: The exact public HTTPS page you want reviewed.
+      placeholder: https://example.com/launch
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Launch context
+      description: What is the page for, who should act on it, and what worries you most?
+      placeholder: We launch tomorrow. The primary action is...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network
+    attributes:
+      label: Preferred USDC network
+      options:
+        - Base
+        - Solana
+        - Either
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope confirmation
+      options:
+        - label: The page is public and does not require credentials.
+          required: true
+        - label: I understand this is an AI-assisted source-level launch review, not security testing, legal advice, or a full accessibility certification.
+          required: true
+        - label: I will wait for scope confirmation before sending payment.
+          required: true

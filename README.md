@@ -36,6 +36,15 @@ curl -X POST \
   -d '{"url":"https://example.com"}'
 ```
 
+## Assisted audit — $10
+
+For buyers who want a prioritized action plan instead of raw JSON, the
+[assisted audit request](https://github.com/SpaleRuby/proofdesk-audit-api/issues/new?template=assisted-audit.yml)
+includes the full report, evidence verification, five prioritized fixes,
+concrete copy or markup suggestions, and one clarification. It is transparently
+AI-assisted. No payment is requested until the public page, scope, network, and
+delivery estimate are confirmed.
+
 ## What the report checks
 
 The report contains 15+ source-level launch checks covering:

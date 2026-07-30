@@ -568,6 +568,120 @@ h1 em {
   line-height: 1.55;
 }
 
+.assisted-section {
+  padding: 104px 0;
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.assisted-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.88fr;
+  gap: 90px;
+  align-items: center;
+}
+
+.assisted-copy h2 {
+  max-width: 650px;
+  margin: 0 0 23px;
+  font: 700 clamp(42px, 5.2vw, 66px)/0.98 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.055em;
+}
+
+.assisted-copy > p {
+  max-width: 620px;
+  color: #bdc9c3;
+  font-size: 17px;
+  line-height: 1.66;
+}
+
+.assisted-trust {
+  margin-top: 31px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.assisted-trust span {
+  padding: 8px 11px;
+  border: 1px solid rgba(217, 247, 231, 0.2);
+  border-radius: 999px;
+  color: #c9d7d0;
+  font: 650 10px/1 ui-monospace, Consolas, monospace;
+}
+
+.offer-card {
+  padding: 30px;
+  background: var(--cream);
+  color: var(--ink);
+  border: 1px solid var(--cream);
+  border-radius: 16px;
+  box-shadow: 13px 13px 0 var(--coral);
+}
+
+.offer-price {
+  padding-bottom: 23px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 6px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.offer-price span {
+  color: #6e7c75;
+  font: 750 10px/1 ui-monospace, Consolas, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.offer-price strong {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  font: 700 58px/0.8 Georgia, serif;
+  letter-spacing: -0.06em;
+}
+
+.offer-price small {
+  color: #405248;
+  font-size: 12px;
+}
+
+.offer-card ul {
+  padding: 7px 0;
+  margin: 0 0 20px;
+  list-style: none;
+}
+
+.offer-card li {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border-bottom: 1px solid rgba(19, 37, 30, 0.1);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.offer-card li span {
+  color: #809087;
+  font: 700 9px/1 ui-monospace, Consolas, monospace;
+}
+
+.offer-button {
+  width: 100%;
+  background: var(--coral);
+  color: #24130f;
+}
+
+.offer-card > p {
+  margin: 13px 0 0;
+  color: #78857f;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .cta-section {
   padding: 96px 0;
   background: var(--mint);
@@ -661,7 +775,7 @@ h1 em {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .response-grid, .cta-grid {
+  .response-grid, .cta-grid, .assisted-grid {
     grid-template-columns: 1fr;
     gap: 52px;
   }
@@ -753,6 +867,15 @@ h1 em {
 
   .response-section {
     padding: 80px 0;
+  }
+
+  .assisted-section {
+    padding: 80px 0;
+  }
+
+  .offer-card {
+    padding: 23px;
+    box-shadow: 7px 7px 0 var(--coral);
   }
 
   .code-window code {

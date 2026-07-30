@@ -174,6 +174,46 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="assisted-section">
+        <div className="shell assisted-grid">
+          <div className="assisted-copy">
+            <p className="kicker light">Need interpretation, not just JSON?</p>
+            <h2>Turn the report into a launch plan.</h2>
+            <p>
+              The assisted review adds a careful second pass and converts the raw
+              findings into the five fixes most worth doing before you announce.
+              It is openly AI-assisted and checked for evidence before delivery.
+            </p>
+            <div className="assisted-trust">
+              <span>Public pages only</span>
+              <span>Scope confirmed first</span>
+              <span>Pay after acceptance</span>
+            </div>
+          </div>
+          <div className="offer-card">
+            <div className="offer-price">
+              <span>Fixed price</span>
+              <strong>$10</strong>
+              <small>USDC · Base or Solana</small>
+            </div>
+            <ul>
+              <li><span>01</span> Full ProofDesk launch report</li>
+              <li><span>02</span> Evidence check on every blocker</li>
+              <li><span>03</span> Prioritized top-five action plan</li>
+              <li><span>04</span> Concrete copy or markup suggestions</li>
+              <li><span>05</span> One follow-up clarification</li>
+            </ul>
+            <a
+              className="button offer-button"
+              href="https://github.com/SpaleRuby/proofdesk-audit-api/issues/new?template=assisted-audit.yml"
+            >
+              Request an assisted audit
+            </a>
+            <p>No payment is requested until the page and scope are accepted.</p>
+          </div>
+        </div>
+      </section>
+
       <section className="cta-section" id="use-api">
         <div className="shell cta-grid">
           <div>
