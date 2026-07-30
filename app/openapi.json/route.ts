@@ -84,6 +84,7 @@ export async function GET(request: Request) {
                       type: "string",
                       format: "uri",
                       pattern: "^https://",
+                      example: "https://example.com",
                       description:
                         "HTTPS page whose hostname is an allowlisted managed-host apex or subdomain.",
                       "x-host-suffix-allowlist": SUPPORTED_MANAGED_HOSTS,
@@ -150,6 +151,7 @@ export async function GET(request: Request) {
                       type: "string",
                       format: "uri",
                       pattern: "^https://",
+                      example: "https://example.com",
                       description:
                         "HTTPS page whose hostname is an allowlisted managed-host apex or subdomain.",
                       "x-host-suffix-allowlist": SUPPORTED_MANAGED_HOSTS,

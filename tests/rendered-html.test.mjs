@@ -100,6 +100,11 @@ test("serves health, example and discovery responses", async () => {
     protocols: [{ x402: {} }],
   });
   assert.equal(paidOperation.responses["402"].description, "Payment Required");
+  assert.equal(
+    paidOperation.requestBody.content["application/json"].schema.properties.url
+      .example,
+    "https://example.com",
+  );
   const metadataOperation = openapi.paths["/api/metadata"].post;
   assert.ok(metadataOperation);
   assert.deepEqual(
@@ -117,6 +122,11 @@ test("serves health, example and discovery responses", async () => {
     "0.010000",
   );
   assert.equal(
+    metadataOperation.requestBody.content["application/json"].schema.properties
+      .url.example,
+    "https://example.com",
+  );
+  assert.equal(
     metadataOperation.responses["402"].description,
     "Payment Required",
   );
@@ -126,6 +136,14 @@ test("serves health, example and discovery responses", async () => {
   assert.match(llms, /does not render JavaScript.*probe links/i);
   assert.match(llms, /Arbitrary custom domains are rejected before fetching/i);
   assert.match(llms, /github\.io.*chatgpt\.site/i);
+  assert.match(
+    llms,
+    /https:\/\/proofdesk-audit-api\.konstanta-work-x\.chatgpt\.site\/openapi\.json/,
+  );
+  assert.doesNotMatch(
+    llms,
+    /(?:Public API:|OpenAPI 3\.1:|Free example response:|Health:|POST)\s+https:\/\/[^\s]*trycloudflare\.com/i,
+  );
   assert.equal(agent.version, "1.4");
   assert.equal(agent.origin, "proofdesk-audit-api.konstanta-work-x.chatgpt.site");
   assert.equal(agent.intents[0].name, "audit_launch_page");
