@@ -37,6 +37,13 @@ test("server-renders the ProofDesk landing page", async () => {
     html,
     /https:\/\/proofdesk-audit-api\.konstanta-work-x\.chatgpt\.site\/api\/audit/,
   );
+  assert.match(html, /Public outcomes, not anonymous praise\./);
+  assert.match(html, /54\/54 tests passed/);
+  assert.match(html, /4\/4 findings shipped/);
+  assert.match(html, /32 minutes to fix/);
+  assert.match(html, /MyZubsterGateway\/pull\/87/);
+  assert.match(html, /BlocksBeyondTheStars\/issues\/574/);
+  assert.match(html, /aigclink\/geolook\/commit\/2b2085e/);
   assert.doesNotMatch(
     html,
     /https:\/\/idea-thickness-vpn-criteria\.trycloudflare\.com/i,

@@ -682,6 +682,95 @@ h1 em {
   text-align: center;
 }
 
+.proof-section {
+  position: relative;
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.proof-card {
+  min-height: 320px;
+  padding: 29px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.proof-card:hover {
+  background: var(--cream);
+  transform: translateY(-3px);
+}
+
+.proof-label {
+  align-self: flex-start;
+  padding: 6px 9px;
+  color: #286448;
+  background: var(--mint-bright);
+  border-radius: 999px;
+  font: 750 9px/1 ui-monospace, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.proof-card strong {
+  margin-top: 36px;
+  color: var(--coral);
+  font: 700 33px/1 Georgia, serif;
+  letter-spacing: -0.04em;
+}
+
+.proof-card h3 {
+  margin: 14px 0 11px;
+  font: 700 21px/1.1 Georgia, serif;
+}
+
+.proof-card p {
+  margin: 0;
+  color: #617169;
+  font-size: 13px;
+  line-height: 1.58;
+}
+
+.proof-link {
+  margin-top: auto;
+  padding-top: 26px;
+  color: #244f3d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.proof-cta {
+  margin-top: 25px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  background: var(--mint-bright);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.proof-cta p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.proof-cta .button {
+  flex: 0 0 auto;
+  background: var(--cream);
+}
+
 .cta-section {
   padding: 96px 0;
   background: var(--mint);
@@ -784,7 +873,7 @@ h1 em {
     justify-self: center;
   }
 
-  .check-grid {
+  .check-grid, .proof-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -866,12 +955,21 @@ h1 em {
     padding: 82px 0;
   }
 
-  .check-grid, .steps {
+  .check-grid, .steps, .proof-grid {
     grid-template-columns: 1fr;
   }
 
   .check-card {
     min-height: 180px;
+  }
+
+  .proof-card {
+    min-height: 280px;
+  }
+
+  .proof-cta {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .check-card h3 {
