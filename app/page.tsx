@@ -228,9 +228,16 @@ export default function Home() {
             <div><span>POST /api/audit</span><span>$0.10 USDC</span></div>
             <pre><code>{curlExample}</code></pre>
             <p>
-              x402-aware clients retry with payment automatically. A plain request
-              returns the payment instructions in a standard 402 response.
+              This curl command shows the standard 402 challenge; it does not pay.
+              The checked-in Base buyer client requires explicit 10¢ confirmation
+              and refuses a changed price or receiver.
             </p>
+            <a
+              className="client-link"
+              href="https://github.com/SpaleRuby/proofdesk-audit-api/blob/main/examples/pay-with-base.mjs"
+            >
+              Run the Base payment example →
+            </a>
           </div>
         </div>
       </section>

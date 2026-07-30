@@ -38,6 +38,27 @@ curl -X POST \
   -d '{"url":"https://example.com"}'
 ```
 
+The curl command only inspects the payment challenge; it does not settle it.
+For a complete Base purchase, use the checked-in
+[`examples/pay-with-base.mjs`](examples/pay-with-base.mjs) client. It reads the
+wallet key from the environment, requires an explicit 10-cent confirmation,
+and refuses to sign if the price, USDC contract, network, or receiver differs
+from the published ProofDesk offer.
+
+```powershell
+$walletKey = Read-Host "Funded Base wallet private key" -AsSecureString
+$env:EVM_PRIVATE_KEY = [System.Net.NetworkCredential]::new("", $walletKey).Password
+try {
+  $env:PROOFDESK_CONFIRM_10_CENT_PAYMENT = "YES"
+  node examples/pay-with-base.mjs https://example.com
+} finally {
+  Remove-Item Env:EVM_PRIVATE_KEY, Env:PROOFDESK_CONFIRM_10_CENT_PAYMENT
+}
+```
+
+The wallet must hold at least `$0.10` of native USDC on Base. Never paste the
+key into the script, issue tracker, command line, or repository.
+
 ## Assisted audit — $10
 
 For buyers who want a prioritized action plan instead of raw JSON, the

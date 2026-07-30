@@ -30,6 +30,8 @@ test("server-renders the ProofDesk landing page", async () => {
   assert.match(html, /Catch the embarrassing stuff/);
   assert.match(html, /Run an audit — \$0\.10/);
   assert.match(html, /Request an assisted audit/);
+  assert.match(html, /Run the Base payment example/);
+  assert.match(html, /refuses a changed price or receiver/);
   assert.match(html, /openly AI-assisted/);
   assert.match(html, /Honest scope/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|nightmoth/i);

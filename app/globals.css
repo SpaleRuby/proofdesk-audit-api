@@ -732,6 +732,19 @@ h1 em {
   line-height: 1.5;
 }
 
+.client-link {
+  display: block;
+  padding: 0 18px 18px;
+  color: #244f3d;
+  background: var(--cream);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.client-link:hover {
+  text-decoration: underline;
+}
+
 .footer {
   min-height: 132px;
   display: grid;
